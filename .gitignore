@@ -16,6 +16,7 @@ Desktop.ini
 
 # Downloaded/Extracted files
 setup/nginx-gateway-fabric/
+setup/nginx
 *.tar
 *.tar.gz
 *.zip

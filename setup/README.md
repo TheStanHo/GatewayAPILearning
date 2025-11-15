@@ -274,7 +274,27 @@ kubectl delete -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v
 kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.2.1" | kubectl delete -f -
 ```
 
+## Testing Your Setup
+
+After setting up Gateway API and NGINX Gateway Fabric, you can deploy a test application to verify everything works:
+
+See **[04-test-application.md](./04-test-application.md)** for instructions on:
+- Deploying a simple test application from Artifact Hub (Bitnami Nginx)
+- Creating an HTTPRoute to route traffic to the test app
+- Testing and troubleshooting
+
+Quick test:
+```powershell
+# Deploy test app
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install test-nginx bitnami/nginx --namespace default
+
+# Create route
+kubectl apply -f 05-httproute-test-app.yaml
+```
+
 ## References
 
 - [NGINX Gateway Fabric Documentation](https://docs.nginx.com/nginx-gateway-fabric/)
 - [Gateway API Documentation](https://gateway-api.sigs.k8s.io/)
+- [Artifact Hub](https://artifacthub.io/) - Helm chart repository

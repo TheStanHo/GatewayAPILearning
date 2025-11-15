@@ -1,0 +1,35 @@
+# Custom values.yaml for Bitnami Nginx with Gateway API HTTPRoute
+# This file shows the minimal configuration needed to enable HTTPRoute generation
+
+# Enable HTTPRoute generation
+httpRoute:
+  enabled: true
+  
+  # Reference your Gateway (created in 02-gateway.yaml)
+  parentRefs:
+    - name: my-gateway
+      namespace: default
+      sectionName: http  # Optional: specify which listener (http or https)
+  
+  # Hostnames for this route
+  hostnames:
+    - test-nginx.local  # Change to your desired hostname
+  
+  # Path matching rules (default matches all paths)
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  
+  # Optional: Add filters if needed
+  # filters:
+  #   - type: RequestHeaderModifier
+  #     requestHeaderModifier:
+  #       set:
+  #         - name: X-Custom-Header
+  #           value: "custom-value"
+
+# Optional: Disable the default LoadBalancer service since Gateway API handles routing
+# service:
+#   type: ClusterIP  # Change from LoadBalancer to ClusterIP
+
