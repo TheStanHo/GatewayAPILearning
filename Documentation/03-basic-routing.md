@@ -1,0 +1,534 @@
+# Basic Routing: Hostnames and Paths
+
+Basic routing is the foundation of Gateway API. This guide covers hostname matching and path matching, comparing them to Nginx Ingress equivalents.
+
+## Hostname Matching
+
+### Nginx Ingress - Host Rules
+
+In Nginx Ingress, you specify hostnames in the `rules` section:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+```
+
+### Gateway API - Hostnames
+
+In Gateway API, hostnames are specified at the top level of the HTTPRoute:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+    - api.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: my-service
+          port: 80
+```
+
+### Key Differences
+
+| Feature | Nginx Ingress | Gateway API |
+|---------|--------------|-------------|
+| Location | In `rules[].host` | Top-level `hostnames` |
+| Multiple Hosts | Separate rules | Single list |
+| Wildcards | Supported | Supported |
+| Default | All hosts if omitted | All hosts if omitted |
+
+### Wildcard Hostnames
+
+Both support wildcard hostnames:
+
+**Nginx Ingress:**
+```yaml
+rules:
+  - host: "*.example.com"
+```
+
+**Gateway API:**
+```yaml
+hostnames:
+  - "*.example.com"
+```
+
+## Path Matching
+
+Path matching is one of the most common routing patterns. Gateway API provides three types of path matching.
+
+### Path Match Types
+
+1. **Exact** - Matches the exact path
+2. **PathPrefix** - Matches paths that start with the prefix
+3. **RegularExpression** - Matches using regex patterns
+
+### 1. Exact Path Matching
+
+Matches only the exact path specified.
+
+**Nginx Ingress:**
+```yaml
+paths:
+  - path: /api/v1/users
+    pathType: Exact
+    backend:
+      service:
+        name: users-service
+        port:
+          number: 80
+```
+
+**Gateway API:**
+```yaml
+rules:
+  - matches:
+      - path:
+          type: Exact
+          value: /api/v1/users
+    backendRefs:
+      - name: users-service
+        port: 80
+```
+
+**Example:**
+- ✅ Matches: `/api/v1/users`
+- ❌ Doesn't match: `/api/v1/users/123`
+- ❌ Doesn't match: `/api/v1/users/`
+
+### 2. PathPrefix Matching
+
+Matches any path that starts with the specified prefix.
+
+**Nginx Ingress:**
+```yaml
+paths:
+  - path: /api
+    pathType: Prefix
+    backend:
+      service:
+        name: api-service
+        port:
+          number: 80
+```
+
+**Gateway API:**
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api
+    backendRefs:
+      - name: api-service
+        port: 80
+```
+
+**Example:**
+- ✅ Matches: `/api`
+- ✅ Matches: `/api/v1`
+- ✅ Matches: `/api/users/123`
+- ❌ Doesn't match: `/apis` (no trailing slash)
+
+**Important:** PathPrefix matches `/api` and `/api/`, but not `/apis` or `/apiary`.
+
+### 3. RegularExpression Matching
+
+Matches paths using regular expressions.
+
+**Nginx Ingress:**
+```yaml
+paths:
+  - path: /api/v[0-9]+
+    pathType: ImplementationSpecific
+    # Requires annotation for regex
+```
+
+**Gateway API:**
+```yaml
+rules:
+  - matches:
+      - path:
+          type: RegularExpression
+          value: "^/api/v[0-9]+"
+    backendRefs:
+      - name: api-service
+        port: 80
+```
+
+**Example:**
+- ✅ Matches: `/api/v1`
+- ✅ Matches: `/api/v2`
+- ✅ Matches: `/api/v10`
+- ❌ Doesn't match: `/api/v`
+
+## Multiple Rules and Precedence
+
+### Nginx Ingress - Multiple Paths
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-service
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: default-service
+                port:
+                  number: 80
+```
+
+**Order matters!** More specific paths should come first.
+
+### Gateway API - Multiple Rules
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Rule 1: Most specific first
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: api-service
+          port: 80
+    # Rule 2: Less specific
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /admin
+      backendRefs:
+        - name: admin-service
+          port: 80
+    # Rule 3: Default/catch-all
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: default-service
+          port: 80
+```
+
+### Rule Precedence
+
+Rules are evaluated in order. The **first matching rule** wins:
+
+1. More specific paths should come first
+2. Exact matches take precedence over prefixes
+3. Prefix matches take precedence over regex
+4. Last rule often serves as a catch-all
+
+## Complete Examples
+
+### Example 1: Simple API Route
+
+**Nginx Ingress:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+```
+
+**Gateway API:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+### Example 2: Multiple Paths
+
+**Nginx Ingress:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-path-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: v1-service
+                port:
+                  number: 80
+          - path: /api/v2
+            pathType: Prefix
+            backend:
+              service:
+                name: v2-service
+                port:
+                  number: 80
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: static-service
+                port:
+                  number: 80
+```
+
+**Gateway API:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: multi-path-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1
+      backendRefs:
+        - name: v1-service
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v2
+      backendRefs:
+        - name: v2-service
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /static
+      backendRefs:
+        - name: static-service
+          port: 80
+```
+
+### Example 3: Exact vs Prefix
+
+**Gateway API:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: exact-prefix-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Exact match for health check
+    - matches:
+        - path:
+            type: Exact
+            value: /health
+      backendRefs:
+        - name: health-service
+          port: 80
+    # Prefix match for everything else
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: app-service
+          port: 80
+```
+
+## Common Patterns
+
+### Pattern 1: API Versioning
+
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api/v1
+    backendRefs:
+      - name: api-v1-service
+        port: 80
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api/v2
+    backendRefs:
+      - name: api-v2-service
+        port: 80
+```
+
+### Pattern 2: Static Files
+
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /static
+    backendRefs:
+      - name: static-service
+        port: 80
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /
+    backendRefs:
+      - name: app-service
+        port: 80
+```
+
+### Pattern 3: Admin Routes
+
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /admin
+    backendRefs:
+      - name: admin-service
+        port: 80
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /
+    backendRefs:
+      - name: public-service
+        port: 80
+```
+
+## Best Practices
+
+1. **Order Matters**: Put more specific paths first
+2. **Use Exact for Specific Endpoints**: Use `Exact` for endpoints like `/health`, `/metrics`
+3. **Use PathPrefix for General Routing**: Use `PathPrefix` for most routing scenarios
+4. **Avoid Regex When Possible**: Regex is powerful but can be hard to debug
+5. **Catch-All Last**: Put your default/catch-all rule at the end
+
+## Troubleshooting
+
+### Path Not Matching?
+
+1. Check the path type (Exact vs PathPrefix)
+2. Verify trailing slashes (`/api` vs `/api/`)
+3. Check rule order (more specific first)
+4. Ensure the path value matches exactly
+
+### Multiple Rules Not Working?
+
+1. Verify rule order (first match wins)
+2. Check that paths don't overlap unexpectedly
+3. Ensure backendRefs are correct
+4. Check Gateway status for route acceptance
+
+## Next Steps
+
+Now that you understand basic routing, let's explore advanced routing features:
+
+👉 **[Next: Advanced Routing →](./04-advanced-routing.md)**
+
+## Related Examples
+
+- `../Examples/02-path-routing/httproute-path-prefix.yaml` - Path prefix example
+- `../Examples/02-path-routing/httproute-path-exact.yaml` - Exact path example
+- `../Examples/02-path-routing/httproute-multiple-paths.yaml` - Multiple paths
+- `../Examples/02-path-routing/ingress-path-equivalent.yaml` - Nginx Ingress equivalent
+

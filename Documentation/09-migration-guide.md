@@ -1,0 +1,538 @@
+# Migration Guide: From Nginx Ingress to Gateway API
+
+This guide provides a step-by-step process for migrating from Nginx Ingress Controllers to Gateway API, with common patterns and troubleshooting tips.
+
+## Migration Overview
+
+Migrating from Nginx Ingress to Gateway API involves:
+1. Understanding your current Ingress setup
+2. Mapping Ingress resources to Gateway API resources
+3. Creating Gateway API resources
+4. Testing the migration
+5. Switching traffic
+6. Cleaning up old resources
+
+## Pre-Migration Checklist
+
+Before starting migration:
+
+- [ ] Inventory all Ingress resources
+- [ ] Document all Nginx-specific annotations
+- [ ] Identify Gateway API implementation to use
+- [ ] Verify Gateway API is installed in cluster
+- [ ] Plan migration order (start with non-critical services)
+- [ ] Set up monitoring for both Ingress and Gateway API
+- [ ] Prepare rollback plan
+
+## Step-by-Step Migration Process
+
+### Step 1: Install Gateway API
+
+First, ensure Gateway API is installed in your cluster:
+
+```bash
+# Install Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
+
+# Install your chosen Gateway implementation
+# Example: Nginx Gateway Fabric
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/nginx-gateway-fabric/main/deploy/manifests/install.yaml
+```
+
+### Step 2: Create GatewayClass
+
+Create a GatewayClass (equivalent to IngressClass):
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway
+```
+
+**Nginx Ingress Equivalent:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+spec:
+  controller: k8s.io/ingress-nginx
+```
+
+### Step 3: Create Gateway
+
+Create a Gateway resource (replaces Ingress Controller setup):
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+### Step 4: Migrate Ingress to HTTPRoute
+
+This is the main migration step. See common patterns below.
+
+## Common Migration Patterns
+
+### Pattern 1: Basic Ingress
+
+**Before (Nginx Ingress):**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+**After (Gateway API):**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: app-service
+          port: 80
+```
+
+### Pattern 2: Ingress with TLS
+
+**Before:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-app
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.example.com
+      secretName: app-tls
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+**After:**
+```yaml
+# TLS is configured in Gateway, not HTTPRoute
+# Gateway (already created in Step 3):
+# - Has HTTPS listener with certificate
+
+# HTTPRoute:
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tls-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: app-service
+          port: 80
+```
+
+### Pattern 3: Path Rewriting
+
+**Before:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rewrite-app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+```
+
+**After:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rewrite-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+### Pattern 4: Canary Deployment
+
+**Before:**
+```yaml
+# Stable Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stable-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stable-service
+                port:
+                  number: 80
+
+---
+# Canary Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-app
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: canary-service
+                port:
+                  number: 80
+```
+
+**After:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: canary-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-service
+          port: 80
+          weight: 90
+        - name: canary-service
+          port: 80
+          weight: 10
+```
+
+### Pattern 5: Rate Limiting
+
+**Before:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rate-limit-app
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+**After:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rate-limit-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: app-service
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: RateLimitPolicy
+metadata:
+  name: rate-limit-policy
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: rate-limit-app
+  default:
+    requests: 100
+    unit: "second"
+```
+
+## Nginx Annotation Mapping
+
+Common Nginx Ingress annotations and their Gateway API equivalents:
+
+| Nginx Annotation | Gateway API Equivalent |
+|-----------------|----------------------|
+| `nginx.ingress.kubernetes.io/rewrite-target` | `URLRewrite` filter |
+| `nginx.ingress.kubernetes.io/canary-weight` | `weight` in `backendRefs` |
+| `nginx.ingress.kubernetes.io/limit-rps` | `RateLimitPolicy` |
+| `nginx.ingress.kubernetes.io/proxy-connect-timeout` | `TimeoutPolicy` |
+| `nginx.ingress.kubernetes.io/enable-cors` | `CORSPolicy` |
+| `nginx.ingress.kubernetes.io/permanent-redirect` | `RequestRedirect` filter |
+| `nginx.ingress.kubernetes.io/ssl-redirect` | `RequestRedirect` filter with `scheme: https` |
+| `nginx.ingress.kubernetes.io/configuration-snippet` | Implementation-specific (may not be portable) |
+
+## Migration Strategy
+
+### Strategy 1: Parallel Running
+
+Run both Ingress and Gateway API side-by-side:
+
+1. Create Gateway API resources
+2. Test with different hostnames
+3. Gradually switch DNS
+4. Monitor both systems
+5. Remove Ingress resources once stable
+
+### Strategy 2: Gradual Migration
+
+Migrate services one at a time:
+
+1. Start with non-critical services
+2. Migrate one service at a time
+3. Test thoroughly before moving to next
+4. Keep Ingress for critical services until confident
+
+### Strategy 3: Big Bang
+
+Migrate everything at once:
+
+1. Prepare all Gateway API resources
+2. Create all resources simultaneously
+3. Switch DNS
+4. Monitor closely
+5. Have rollback plan ready
+
+**Recommendation:** Use Strategy 1 or 2 for production environments.
+
+## Testing Checklist
+
+After migration, test:
+
+- [ ] Basic routing works
+- [ ] TLS/HTTPS works
+- [ ] Path rewriting works
+- [ ] Header modifications work
+- [ ] Traffic splitting works
+- [ ] Rate limiting works (if applicable)
+- [ ] Timeouts work (if applicable)
+- [ ] Monitoring/observability works
+- [ ] Performance is acceptable
+
+## Rollback Plan
+
+If issues occur:
+
+1. **Quick Rollback**: Switch DNS back to Ingress
+2. **Keep Resources**: Don't delete Gateway API resources immediately
+3. **Investigate**: Check Gateway/HTTPRoute status
+4. **Fix Issues**: Address problems in Gateway API setup
+5. **Retry**: Try migration again after fixes
+
+## Common Issues and Solutions
+
+### Issue 1: HTTPRoute Not Attaching to Gateway
+
+**Symptoms:** HTTPRoute shows no parent status
+
+**Solutions:**
+- Check Gateway `allowedRoutes` configuration
+- Verify namespace permissions
+- Check Gateway status for errors
+
+### Issue 2: TLS Not Working
+
+**Symptoms:** HTTPS requests fail
+
+**Solutions:**
+- Verify certificate Secret exists
+- Check certificateRef in Gateway
+- Verify certificate is valid for hostname
+- Check Gateway listener configuration
+
+### Issue 3: Path Rewriting Not Working
+
+**Symptoms:** Backend receives wrong path
+
+**Solutions:**
+- Verify filter type is `URLRewrite`
+- Check `replacePrefixMatch` value
+- Test with curl to see actual forwarded path
+
+### Issue 4: Traffic Splitting Not Working
+
+**Symptoms:** All traffic goes to one backend
+
+**Solutions:**
+- Verify weights are set correctly
+- Check backend services are healthy
+- Verify HTTPRoute status
+
+## Migration Tools
+
+### Manual Migration
+
+Create Gateway API resources manually based on Ingress resources.
+
+### Automated Migration
+
+Some tools can help automate migration:
+
+- **Gateway API Migration Tools**: Check Gateway API community tools
+- **Custom Scripts**: Write scripts to convert Ingress to HTTPRoute
+- **Terraform/Helm**: Update infrastructure-as-code
+
+## Post-Migration
+
+After successful migration:
+
+1. **Monitor**: Monitor Gateway API resources
+2. **Document**: Document Gateway API setup
+3. **Train Team**: Train team on Gateway API
+4. **Cleanup**: Remove old Ingress resources (after verification period)
+5. **Optimize**: Optimize Gateway API configuration
+
+## Best Practices
+
+1. **Start Small**: Migrate non-critical services first
+2. **Test Thoroughly**: Test all functionality before switching
+3. **Monitor Closely**: Watch metrics during migration
+4. **Keep Ingress**: Keep Ingress resources until confident
+5. **Document Changes**: Document all changes made during migration
+6. **Team Training**: Ensure team understands Gateway API
+
+## Next Steps
+
+After migration, follow best practices:
+
+👉 **[Next: Best Practices →](./10-best-practices.md)**
+
+## Related Examples
+
+- `../Examples/08-migration/before-ingress.yaml` - Original Ingress
+- `../Examples/08-migration/after-httproute.yaml` - Migrated HTTPRoute
+- `../Examples/08-migration/migration-comparison.md` - Side-by-side comparison
+

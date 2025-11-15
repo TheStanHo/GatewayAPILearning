@@ -1,0 +1,497 @@
+# TLS/SSL Configuration
+
+TLS (Transport Layer Security) configuration in Gateway API is handled at the Gateway level, providing centralized certificate management. This guide covers TLS setup and compares it to Nginx Ingress.
+
+## TLS in Gateway API vs Nginx Ingress
+
+### Nginx Ingress - TLS Configuration
+
+In Nginx Ingress, TLS is configured in the Ingress resource:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - example.com
+      secretName: example-tls
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+```
+
+Certificates are managed via Kubernetes Secrets.
+
+### Gateway API - TLS Configuration
+
+In Gateway API, TLS is configured at the **Gateway** level, not the HTTPRoute:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+HTTPRoutes automatically use the Gateway's TLS configuration.
+
+## TLS Modes
+
+Gateway API supports different TLS modes:
+
+### 1. Terminate (TLS Termination)
+
+TLS is terminated at the Gateway, and traffic to backends is unencrypted (HTTP).
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+**Use case:** Most common pattern. Gateway handles TLS, backends receive plain HTTP.
+
+### 2. Passthrough
+
+TLS is passed through to the backend service without termination.
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https-passthrough
+      protocol: TLS
+      port: 443
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+**Use case:** Backend services handle their own TLS certificates.
+
+## Certificate Management
+
+### Creating TLS Secrets
+
+TLS certificates are stored as Kubernetes Secrets, same as Nginx Ingress:
+
+```bash
+kubectl create secret tls example-tls \
+  --cert=path/to/cert.crt \
+  --key=path/to/cert.key
+```
+
+Or using cert-manager:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-cert
+spec:
+  secretName: example-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - example.com
+    - www.example.com
+```
+
+### Referencing Certificates in Gateway
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+            group: ""
+      hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+## Multiple Certificates
+
+### Multiple Hostnames with Different Certificates
+
+You can configure multiple listeners for different hostnames:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: multi-cert-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https-example
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-api
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: api-tls
+            kind: Secret
+      hostname: api.example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+### Wildcard Certificates
+
+Use wildcard certificates for multiple subdomains:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: wildcard-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-tls
+            kind: Secret
+      hostname: "*.example.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+## HTTP and HTTPS Listeners
+
+You can configure both HTTP and HTTPS listeners:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: http-https-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+HTTPRoutes can attach to either listener.
+
+## TLS Options
+
+### TLS Version and Cipher Suites
+
+Some Gateway API implementations support TLS options:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tls-options-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+        options:
+          # Implementation-specific options
+          # Check your Gateway implementation docs
+```
+
+**Note:** TLS options are implementation-specific. Check your Gateway provider's documentation.
+
+## Mutual TLS (mTLS)
+
+Mutual TLS requires both client and server certificates. This is typically handled via policies (see [Policies documentation](./08-policies.md)).
+
+## Complete Examples
+
+### Example 1: Basic HTTPS Gateway
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: https-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-route
+spec:
+  parentRefs:
+    - name: https-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: my-service
+          port: 80
+```
+
+### Example 2: HTTP to HTTPS Redirect
+
+Some implementations support automatic HTTP to HTTPS redirects. Check your Gateway provider's documentation.
+
+For Nginx Gateway Fabric, you might configure:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: redirect-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+Then use a redirect filter in HTTPRoute (see [Request/Response Modifications](./07-request-response-modifications.md)).
+
+### Example 3: Multiple Domains
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: multi-domain-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: https-example
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+      hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-api
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: api-tls
+            kind: Secret
+      hostname: api.example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+## Comparison Table
+
+| Feature | Nginx Ingress | Gateway API |
+|---------|--------------|-------------|
+| TLS Location | Ingress resource | Gateway resource |
+| Certificate Storage | Kubernetes Secrets | Kubernetes Secrets |
+| TLS Termination | Supported | `mode: Terminate` |
+| TLS Passthrough | Supported | `mode: Passthrough` |
+| Multiple Certificates | Multiple Ingress resources | Multiple listeners |
+| Wildcard Certificates | Supported | Supported |
+| Certificate Management | Manual or cert-manager | Manual or cert-manager |
+
+## Best Practices
+
+1. **Centralized TLS**: Configure TLS at the Gateway level for centralized management
+2. **Use cert-manager**: Automate certificate provisioning and renewal
+3. **Wildcard Certificates**: Use wildcard certs for multiple subdomains when possible
+4. **TLS Termination**: Use TLS termination for most use cases (simpler backend setup)
+5. **Certificate Rotation**: Plan for certificate rotation and renewal
+6. **TLS Versions**: Ensure modern TLS versions (1.2+) are used
+7. **Separate HTTP/HTTPS**: Configure both HTTP and HTTPS listeners when needed
+
+## Common Patterns
+
+### Pattern 1: Single Domain HTTPS
+
+```yaml
+Gateway with HTTPS listener → HTTPRoute with hostname
+```
+
+### Pattern 2: Multiple Domains
+
+```yaml
+Gateway with multiple HTTPS listeners (one per domain) → HTTPRoutes per domain
+```
+
+### Pattern 3: HTTP to HTTPS Redirect
+
+```yaml
+Gateway with HTTP and HTTPS listeners → HTTPRoute with redirect filter
+```
+
+## Troubleshooting
+
+### Certificate Not Working?
+
+1. Verify the Secret exists: `kubectl get secret example-tls`
+2. Check certificate format (must be valid TLS secret)
+3. Verify certificateRef name matches Secret name
+4. Check Gateway status for certificate errors
+5. Ensure certificate is valid for the hostname
+
+### TLS Handshake Fails?
+
+1. Verify certificate is not expired
+2. Check certificate matches the hostname
+3. Verify TLS mode is correct (Terminate vs Passthrough)
+4. Check Gateway implementation logs
+
+### Multiple Certificates Not Working?
+
+1. Verify each listener has a unique hostname
+2. Check that certificates match their respective hostnames
+3. Ensure HTTPRoutes reference the correct Gateway listener
+
+## Next Steps
+
+Now that you understand TLS configuration, let's learn about request and response modifications:
+
+👉 **[Next: Request/Response Modifications →](./07-request-response-modifications.md)**
+
+## Related Examples
+
+- `../Examples/05-tls/gateway-tls.yaml` - Basic TLS configuration
+- `../Examples/05-tls/gateway-tls-termination.yaml` - TLS termination
+- `../Examples/05-tls/ingress-tls-equivalent.yaml` - Nginx Ingress equivalent
+

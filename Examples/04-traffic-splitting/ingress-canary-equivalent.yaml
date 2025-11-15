@@ -1,0 +1,60 @@
+# Nginx Ingress Equivalent - Canary Deployment
+# Nginx Ingress requires TWO separate Ingress resources for canary
+# Compare with httproute-canary.yaml (single resource)
+#
+# Related Documentation: Documentation/05-traffic-splitting.md
+
+# Stable Ingress (90% of traffic)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stable-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stable-app
+                port:
+                  number: 80
+---
+# Canary Ingress (10% of traffic)
+# Requires annotations for canary behavior
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    # Enable canary
+    nginx.ingress.kubernetes.io/canary: "true"
+    # Set canary weight (0-100)
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: canary-app
+                port:
+                  number: 80
+
+# Key Differences:
+# 1. Nginx Ingress: Requires TWO Ingress resources
+#    Gateway API: Single HTTPRoute with weights
+# 2. Nginx Ingress: Uses annotations (canary-weight)
+#    Gateway API: Native weight field in backendRefs
+# 3. Nginx Ingress: More complex to manage
+#    Gateway API: Simpler, more intuitive
+# 4. Nginx Ingress: Nginx-specific annotations
+#    Gateway API: Standard, portable across implementations
+

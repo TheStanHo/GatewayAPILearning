@@ -1,0 +1,42 @@
+# Nginx Ingress Equivalent - Header Routing
+# Nginx Ingress requires server snippets for header-based routing
+# Compare with httproute-header-match.yaml
+#
+# Related Documentation: Documentation/04-advanced-routing.md
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: header-ingress
+  annotations:
+    # Nginx Ingress requires custom server snippets for header routing
+    # This is Nginx-specific and not portable
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($http_x_environment = "staging") {
+        return 307 $scheme://staging.example.com$request_uri;
+      }
+      if ($http_x_environment = "production") {
+        return 307 $scheme://production.example.com$request_uri;
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: default-service
+                port:
+                  number: 80
+
+# Key Differences:
+# 1. Nginx Ingress: Requires server snippets (Nginx-specific)
+#    Gateway API: Native header matching (portable)
+# 2. Nginx Ingress: Complex configuration, hard to maintain
+#    Gateway API: Clean, declarative configuration
+# 3. Nginx Ingress: Not portable across implementations
+#    Gateway API: Works with any Gateway API implementation
+

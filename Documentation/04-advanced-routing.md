@@ -1,0 +1,599 @@
+# Advanced Routing: Headers, Query Parameters, and Methods
+
+Gateway API provides powerful matching capabilities beyond just paths and hostnames. This guide covers header matching, query parameter matching, and HTTP method matching, comparing them to Nginx Ingress equivalents.
+
+## Header Matching
+
+Header matching allows you to route traffic based on HTTP headers. This is useful for A/B testing, environment routing, and feature flags.
+
+### Nginx Ingress - Header Annotations
+
+Nginx Ingress requires annotations for header-based routing:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: header-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($http_x_environment = "staging") {
+        return 307 $scheme://staging.example.com$request_uri;
+      }
+spec:
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: default-service
+                port:
+                  number: 80
+```
+
+This requires custom Nginx configuration snippets!
+
+### Gateway API - Header Matching
+
+Gateway API has native header matching:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: header-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - headers:
+            - name: X-Environment
+              value: staging
+      backendRefs:
+        - name: staging-service
+          port: 80
+    - matches:
+        - headers:
+            - name: X-Environment
+              value: production
+      backendRefs:
+        - name: production-service
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: default-service
+          port: 80
+```
+
+### Header Match Types
+
+Gateway API supports different header match types:
+
+#### Exact Match (Default)
+
+```yaml
+matches:
+  - headers:
+      - name: X-Environment
+        value: staging
+```
+
+Matches when header value exactly equals "staging".
+
+#### Regular Expression Match
+
+```yaml
+matches:
+  - headers:
+      - name: X-Version
+        type: RegularExpression
+        value: "^v[0-9]+"
+```
+
+Matches when header value matches the regex pattern.
+
+### Multiple Headers
+
+You can match on multiple headers (AND logic):
+
+```yaml
+matches:
+  - headers:
+      - name: X-Environment
+        value: staging
+      - name: X-User-Type
+        value: premium
+    backendRefs:
+      - name: premium-staging-service
+        port: 80
+```
+
+This matches requests that have **both** headers with the specified values.
+
+### Multiple Header Matches (OR Logic)
+
+To create OR logic, use multiple match blocks:
+
+```yaml
+rules:
+  - matches:
+      - headers:
+          - name: X-Environment
+            value: staging
+      - headers:
+          - name: X-Environment
+            value: development
+    backendRefs:
+      - name: non-prod-service
+        port: 80
+```
+
+## Query Parameter Matching
+
+Query parameter matching allows routing based on URL query strings.
+
+### Nginx Ingress - Query Parameters
+
+Nginx Ingress requires server snippets for query parameter matching:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: query-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($arg_version = "v2") {
+        return 307 $scheme://v2.example.com$request_uri;
+      }
+```
+
+### Gateway API - Query Parameter Matching
+
+Gateway API has native query parameter matching:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: query-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - queryParams:
+            - name: version
+              value: v2
+      backendRefs:
+        - name: v2-service
+          port: 80
+    - matches:
+        - queryParams:
+            - name: version
+              value: v1
+      backendRefs:
+        - name: v1-service
+          port: 80
+```
+
+### Query Parameter Match Types
+
+#### Exact Match
+
+```yaml
+matches:
+  - queryParams:
+      - name: env
+        value: staging
+```
+
+Matches `?env=staging`.
+
+#### Regular Expression Match
+
+```yaml
+matches:
+  - queryParams:
+      - name: version
+        type: RegularExpression
+        value: "^v[0-9]+"
+```
+
+Matches `?version=v1`, `?version=v2`, etc.
+
+## HTTP Method Matching
+
+HTTP method matching allows routing based on the HTTP verb (GET, POST, PUT, DELETE, etc.).
+
+### Nginx Ingress - Method Matching
+
+Nginx Ingress requires server snippets:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: method-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($request_method = "POST") {
+        return 307 $scheme://api-write.example.com$request_uri;
+      }
+```
+
+### Gateway API - Method Matching
+
+Gateway API has native method matching:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: method-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - method: POST
+          path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: write-service
+          port: 80
+    - matches:
+        - method: GET
+          path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: read-service
+        port: 80
+```
+
+### Supported HTTP Methods
+
+- GET
+- HEAD
+- POST
+- PUT
+- DELETE
+- CONNECT
+- OPTIONS
+- TRACE
+- PATCH
+
+## Combining Match Conditions
+
+One of Gateway API's powerful features is combining multiple match conditions.
+
+### Single Match with Multiple Conditions (AND)
+
+All conditions in a single `matches` entry must be true:
+
+```yaml
+matches:
+  - path:
+      type: PathPrefix
+      value: /api
+    headers:
+      - name: X-Environment
+        value: staging
+    method: POST
+    queryParams:
+      - name: version
+        value: v2
+```
+
+This matches: `POST /api/users?version=v2` with header `X-Environment: staging`.
+
+### Multiple Matches (OR)
+
+Multiple `matches` entries create OR logic:
+
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api/v1
+      - path:
+          type: PathPrefix
+          value: /api/v2
+    backendRefs:
+      - name: api-service
+        port: 80
+```
+
+This matches either `/api/v1` OR `/api/v2`.
+
+## Complete Examples
+
+### Example 1: Environment-Based Routing
+
+Route traffic to different services based on environment header:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: environment-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Staging environment
+    - matches:
+        - headers:
+            - name: X-Environment
+              value: staging
+      backendRefs:
+        - name: staging-service
+          port: 80
+    # Production environment
+    - matches:
+        - headers:
+            - name: X-Environment
+              value: production
+      backendRefs:
+        - name: production-service
+          port: 80
+    # Default
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: default-service
+          port: 80
+```
+
+### Example 2: Feature Flag Routing
+
+Route based on feature flag header:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: feature-flag-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # New feature enabled
+    - matches:
+        - headers:
+            - name: X-Feature-NewUI
+              value: "true"
+      backendRefs:
+        - name: new-ui-service
+          port: 80
+    # Default
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: old-ui-service
+          port: 80
+```
+
+### Example 3: API Version via Query Parameter
+
+Route based on API version in query string:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-version-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    # Version 2
+    - matches:
+        - queryParams:
+            - name: version
+              value: v2
+      backendRefs:
+        - name: api-v2-service
+          port: 80
+    # Version 1 (default)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: api-v1-service
+          port: 80
+```
+
+### Example 4: Read/Write Separation
+
+Separate read and write traffic:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: read-write-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    # Write operations
+    - matches:
+        - method: POST
+        - method: PUT
+        - method: DELETE
+        - method: PATCH
+      backendRefs:
+        - name: write-service
+          port: 80
+    # Read operations
+    - matches:
+        - method: GET
+        - method: HEAD
+      backendRefs:
+        - name: read-service
+          port: 80
+```
+
+### Example 5: Complex Combined Matching
+
+Combine path, header, method, and query parameters:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: complex-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Premium users, POST to /api, v2 version
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+          headers:
+            - name: X-User-Type
+              value: premium
+          method: POST
+          queryParams:
+            - name: version
+              value: v2
+      backendRefs:
+        - name: premium-v2-write-service
+          port: 80
+    # Default API route
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: default-api-service
+          port: 80
+```
+
+## Comparison Table
+
+| Feature | Nginx Ingress | Gateway API |
+|---------|--------------|-------------|
+| Header Matching | Server snippets | Native `headers` field |
+| Query Parameters | Server snippets | Native `queryParams` field |
+| Method Matching | Server snippets | Native `method` field |
+| Multiple Conditions | Complex snippets | Native combination |
+| Portability | Nginx-specific | Standard across implementations |
+
+## Best Practices
+
+1. **Use Headers for Environment Routing**: Headers are great for A/B testing and environment separation
+2. **Query Params for API Versioning**: Query parameters work well for API version selection
+3. **Method Matching for Read/Write Separation**: Separate read and write operations
+4. **Combine Conditions Carefully**: Understand AND vs OR logic
+5. **Order Matters**: More specific matches should come first
+6. **Default Fallback**: Always include a default rule for unmatched requests
+
+## Common Use Cases
+
+### Use Case 1: Canary Deployment with Headers
+
+```yaml
+rules:
+  - matches:
+      - headers:
+          - name: X-Canary
+            value: "true"
+      backendRefs:
+        - name: canary-service
+          port: 80
+          weight: 100
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-service
+          port: 80
+```
+
+### Use Case 2: Mobile vs Web Routing
+
+```yaml
+rules:
+  - matches:
+      - headers:
+          - name: User-Agent
+            type: RegularExpression
+            value: ".*Mobile.*"
+      backendRefs:
+        - name: mobile-service
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: web-service
+          port: 80
+```
+
+## Troubleshooting
+
+### Header Not Matching?
+
+1. Check header name (case-sensitive in some implementations)
+2. Verify header value exactly matches
+3. Ensure client is sending the header
+4. Check rule order
+
+### Query Parameter Not Working?
+
+1. Verify query parameter name and value
+2. Check URL encoding
+3. Ensure parameter is in the query string
+4. Test with curl: `curl "http://example.com?param=value"`
+
+## Next Steps
+
+Now that you understand advanced routing, let's learn about traffic splitting:
+
+👉 **[Next: Traffic Splitting →](./05-traffic-splitting.md)**
+
+## Related Examples
+
+- `../Examples/03-header-routing/httproute-header-match.yaml` - Header matching
+- `../Examples/03-header-routing/httproute-multiple-headers.yaml` - Multiple headers
+- `../Examples/03-header-routing/ingress-header-equivalent.yaml` - Nginx Ingress equivalent
+- `../Examples/07-advanced/httproute-query-params.yaml` - Query parameters
+- `../Examples/07-advanced/httproute-method-match.yaml` - Method matching
+

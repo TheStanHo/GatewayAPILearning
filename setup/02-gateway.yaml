@@ -1,0 +1,36 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  # References the GatewayClass (default NGINX Gateway Fabric uses "nginx")
+  gatewayClassName: nginx
+  
+  # Listeners define ports and protocols
+  listeners:
+    # HTTP listener on port 80
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          # All: Any namespace can attach routes
+          # Same: Only same namespace as Gateway
+          # Selector: Only namespaces matching selector
+          from: All
+    
+    # HTTPS listener on port 443 (optional - requires TLS certificate)
+    # Comment out or remove if you don't have TLS certificates yet
+    # - name: https
+    #   protocol: HTTPS
+    #   port: 443
+    #   tls:
+    #     mode: Terminate
+    #     certificateRefs:
+    #       - name: example-tls
+    #         kind: Secret
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+

@@ -1,0 +1,180 @@
+# Introduction to Gateway API
+
+## What is Gateway API?
+
+Gateway API is the **next-generation standard** for Kubernetes service networking. It's designed to replace and improve upon the Ingress resource, providing a more expressive, extensible, and role-oriented model for managing traffic in Kubernetes clusters.
+
+Think of Gateway API as the evolution of Ingress Controllers - it solves many of the limitations that Ingress resources have, especially when using Nginx Ingress Controllers.
+
+## Why Gateway API Exists
+
+### Limitations of Ingress Controllers (Nginx Ingress)
+
+If you've worked with Nginx Ingress Controllers, you've likely encountered these challenges:
+
+1. **Single Resource for Everything**: All configuration goes into one `Ingress` resource
+2. **Vendor-Specific Annotations**: Advanced features require Nginx-specific annotations like:
+   - `nginx.ingress.kubernetes.io/rewrite-target`
+   - `nginx.ingress.kubernetes.io/canary`
+   - `nginx.ingress.kubernetes.io/rate-limit`
+3. **Limited Role Separation**: Infrastructure and application teams often need to modify the same resource
+4. **Portability Issues**: Annotations don't work across different Ingress implementations
+5. **Limited Expressiveness**: Hard to express complex routing rules, traffic splitting, and policies
+
+### How Gateway API Solves These Problems
+
+Gateway API addresses these limitations by:
+
+1. **Role-Oriented Design**: Separates infrastructure (Gateway) from application (HTTPRoute) concerns
+2. **Standardized API**: Works across different implementations (Nginx, Istio, Contour, etc.)
+3. **More Expressive**: Native support for advanced routing, traffic splitting, and policies
+4. **Extensible**: Policy attachments and extension points for custom features
+5. **Multi-Protocol**: Supports HTTP, TCP, UDP, and TLS routing
+
+## Architecture Comparison
+
+### Nginx Ingress Controller Architecture
+
+```
+┌─────────────────┐
+│  Ingress Class  │  (Defines which controller to use)
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Ingress        │  (Single resource for all routing)
+│  Resource       │  (Uses annotations for advanced features)
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Nginx Ingress  │
+│  Controller     │  (Processes Ingress resources)
+└─────────────────┘
+```
+
+### Gateway API Architecture
+
+```
+┌─────────────────┐
+│  GatewayClass   │  (Defines type of Gateway)
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Gateway        │  (Infrastructure team manages)
+│  (Listeners)    │  (Defines ports, TLS, protocols)
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  HTTPRoute      │  (Application team manages)
+│  (Routing Rules)│  (Defines hostnames, paths, backends)
+└─────────────────┘
+```
+
+## Key Benefits
+
+### 1. Role Separation
+
+**Nginx Ingress:**
+- Both infrastructure and application teams modify the same `Ingress` resource
+- Can lead to conflicts and permission issues
+
+**Gateway API:**
+- Infrastructure team manages `Gateway` (ports, TLS, infrastructure)
+- Application team manages `HTTPRoute` (routing rules, backends)
+- Clear separation of concerns
+
+### 2. Portability
+
+**Nginx Ingress:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+```
+These annotations only work with Nginx Ingress!
+
+**Gateway API:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+spec:
+  filters:
+    - type: URLRewrite
+```
+This works with any Gateway API implementation!
+
+### 3. Better Expressiveness
+
+**Nginx Ingress:**
+- Traffic splitting requires canary annotations
+- Header-based routing needs complex annotations
+- Limited support for advanced matching
+
+**Gateway API:**
+- Native weighted routing in `backendRefs`
+- Built-in header, query parameter, and method matching
+- Rich filter system for request/response modifications
+
+## When to Use Gateway API vs Ingress
+
+### Use Gateway API When:
+- ✅ You need advanced routing features (traffic splitting, header matching)
+- ✅ You want portability across different implementations
+- ✅ You have multiple teams (infrastructure vs application)
+- ✅ You need fine-grained policy control
+- ✅ You're starting a new project
+
+### Use Ingress When:
+- ✅ You have simple routing needs
+- ✅ You're already heavily invested in Nginx Ingress annotations
+- ✅ Your cluster doesn't support Gateway API yet
+- ✅ You need a quick, simple solution
+
+## Gateway API Versions
+
+Gateway API has evolved through several versions:
+
+### v1alpha2 (Early)
+- Initial experimental release
+- Basic routing features
+- Limited implementation support
+
+### v1beta1 (Stable Beta)
+- More stable API
+- Better implementation support
+- Common features standardized
+
+### v1 (Current Stable)
+- Production-ready
+- Core features are stable
+- Widely supported by implementations
+
+**Note**: Always check which version your Gateway API implementation supports. Most modern implementations support v1beta1 or v1.
+
+## Implementation Providers
+
+Gateway API is a **standard**, not a specific implementation. You can use it with:
+
+- **Nginx Gateway Fabric**: Nginx's official Gateway API implementation
+- **Istio**: Service mesh with Gateway API support
+- **Contour**: Envoy-based Gateway API implementation
+- **Kong**: API gateway with Gateway API support
+- **Traefik**: Cloud-native router with Gateway API support
+
+## Next Steps
+
+Now that you understand what Gateway API is and why it exists, let's dive into the core concepts:
+
+👉 **[Next: Core Concepts →](./02-core-concepts.md)**
+
+## Related Examples
+
+- See `../Examples/01-basic-setup/` for basic Gateway API setup
+- Compare with `../Examples/01-basic-setup/ingress-equivalent.yaml` to see the difference
+

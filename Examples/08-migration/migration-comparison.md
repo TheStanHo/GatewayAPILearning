@@ -1,0 +1,106 @@
+# Migration Comparison: Nginx Ingress to Gateway API
+
+This document provides a side-by-side comparison of the migration from Nginx Ingress to Gateway API.
+
+## Resource Mapping
+
+| Nginx Ingress | Gateway API | Notes |
+|--------------|-------------|-------|
+| IngressClass | GatewayClass | Defines controller type |
+| Ingress Controller Setup | Gateway | Network endpoints and TLS |
+| Ingress Resource | HTTPRoute | Routing rules |
+| Ingress TLS | Gateway TLS | Centralized at Gateway level |
+| Ingress Backend | BackendRef | More powerful in Gateway API |
+
+## Annotation Mapping
+
+| Nginx Annotation | Gateway API Equivalent |
+|-----------------|------------------------|
+| `nginx.ingress.kubernetes.io/rewrite-target` | `URLRewrite` filter |
+| `nginx.ingress.kubernetes.io/canary-weight` | `weight` in `backendRefs` |
+| `nginx.ingress.kubernetes.io/limit-rps` | `RateLimitPolicy` |
+| `nginx.ingress.kubernetes.io/proxy-connect-timeout` | `TimeoutPolicy` |
+| `nginx.ingress.kubernetes.io/enable-cors` | `CORSPolicy` |
+| `nginx.ingress.kubernetes.io/permanent-redirect` | `RequestRedirect` filter |
+
+## Key Differences
+
+### 1. Architecture
+
+**Nginx Ingress:**
+- Single `Ingress` resource for all configuration
+- Controller deployed separately
+- TLS configured per Ingress
+
+**Gateway API:**
+- Separate `Gateway` (infrastructure) and `HTTPRoute` (application)
+- Gateway is a Kubernetes resource
+- TLS configured once at Gateway level
+
+### 2. Role Separation
+
+**Nginx Ingress:**
+- Infrastructure and application teams modify same resource
+- Limited role separation
+
+**Gateway API:**
+- Infrastructure team: Gateway
+- Application team: HTTPRoute
+- Clear separation of concerns
+
+### 3. Portability
+
+**Nginx Ingress:**
+- Nginx-specific annotations
+- Not portable across implementations
+
+**Gateway API:**
+- Standard API
+- Works across implementations (Nginx, Istio, Contour, etc.)
+
+### 4. Expressiveness
+
+**Nginx Ingress:**
+- Limited native features
+- Requires annotations for advanced features
+
+**Gateway API:**
+- Native support for advanced routing
+- Rich filter system
+- Policy attachments
+
+## Migration Benefits
+
+1. **Better Organization**: Clear separation between infrastructure and application
+2. **Portability**: Works with any Gateway API implementation
+3. **Native Features**: Advanced features built-in, not via annotations
+4. **Scalability**: Application teams can create routes independently
+5. **Standard API**: Follows Kubernetes API patterns
+
+## Migration Challenges
+
+1. **Learning Curve**: New concepts and resources
+2. **Implementation Support**: Some features vary by implementation
+3. **Migration Effort**: Requires updating all Ingress resources
+4. **Testing**: Need to test thoroughly after migration
+
+## Migration Checklist
+
+- [ ] Install Gateway API CRDs
+- [ ] Install Gateway implementation
+- [ ] Create GatewayClass
+- [ ] Create Gateway with TLS
+- [ ] Migrate Ingress to HTTPRoute
+- [ ] Migrate annotations to filters/policies
+- [ ] Test routing
+- [ ] Test TLS
+- [ ] Test advanced features
+- [ ] Monitor metrics
+- [ ] Remove old Ingress resources
+
+## Related Documentation
+
+- [Migration Guide](../Documentation/09-migration-guide.md) - Detailed migration steps
+- [Core Concepts](../Documentation/02-core-concepts.md) - Understanding Gateway API
+- [Best Practices](../Documentation/10-best-practices.md) - Gateway API best practices
+

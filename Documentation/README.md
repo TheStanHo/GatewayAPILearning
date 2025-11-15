@@ -1,0 +1,53 @@
+# Gateway API Learning Documentation
+
+Welcome to the Gateway API learning path! This documentation is designed to help you understand Gateway API by comparing it to Nginx Ingress Controllers, which you may already be familiar with.
+
+## Learning Path
+
+Follow these documents in order for a progressive learning experience:
+
+1. **[01-introduction.md](./01-introduction.md)** - Start here! Learn what Gateway API is and why it exists
+2. **[02-core-concepts.md](./02-core-concepts.md)** - Understand GatewayClass, Gateway, and HTTPRoute
+3. **[03-basic-routing.md](./03-basic-routing.md)** - Learn hostname and path matching
+4. **[04-advanced-routing.md](./04-advanced-routing.md)** - Header, query parameter, and method matching
+5. **[05-traffic-splitting.md](./05-traffic-splitting.md)** - Weighted routing and canary deployments
+6. **[06-tls-ssl.md](./06-tls-ssl.md)** - TLS/SSL configuration and certificate management
+7. **[07-request-response-modifications.md](./07-request-response-modifications.md)** - URL rewriting and header modifications
+8. **[08-policies.md](./08-policies.md)** - Policy attachments and advanced features
+9. **[09-migration-guide.md](./09-migration-guide.md)** - Step-by-step migration from Nginx Ingress
+10. **[10-best-practices.md](./10-best-practices.md)** - Best practices and recommendations
+
+## How to Use This Documentation
+
+- Each document includes **side-by-side comparisons** with Nginx Ingress Controllers
+- **Code examples** are included inline in each document
+- **Working examples** are available in the `../Examples/` folder
+- Each example folder corresponds to the documentation topics
+
+## Prerequisites
+
+- Basic understanding of Kubernetes
+- Familiarity with Nginx Ingress Controllers (helpful but not required)
+- Access to a Kubernetes cluster with Gateway API support
+
+## Quick Reference
+
+### Key Resources
+- **GatewayClass**: Defines the type of Gateway (like IngressClass)
+- **Gateway**: Defines network endpoints (like Ingress Controller setup)
+- **HTTPRoute**: Defines routing rules (like Ingress resource)
+
+### Common Patterns
+- Basic routing → See [03-basic-routing.md](./03-basic-routing.md)
+- Traffic splitting → See [05-traffic-splitting.md](./05-traffic-splitting.md)
+- TLS configuration → See [06-tls-ssl.md](./06-tls-ssl.md)
+- URL rewriting → See [07-request-response-modifications.md](./07-request-response-modifications.md)
+
+## Examples
+
+All working examples are located in the `../Examples/` folder, organized by topic. Each example includes:
+- Working YAML configuration
+- Comments explaining key fields
+- References to the corresponding documentation section
+- Nginx Ingress equivalents where applicable
+

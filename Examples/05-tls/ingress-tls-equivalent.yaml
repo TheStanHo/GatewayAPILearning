@@ -1,0 +1,40 @@
+# Nginx Ingress Equivalent - TLS Configuration
+# Compare with gateway-tls.yaml
+# In Nginx Ingress, TLS is configured in the Ingress resource
+# In Gateway API, TLS is configured in the Gateway resource
+#
+# Related Documentation: Documentation/06-tls-ssl.md
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-ingress
+spec:
+  ingressClassName: nginx
+  # TLS configuration in Ingress resource
+  tls:
+    - hosts:
+        - example.com
+      secretName: example-tls
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+
+# Key Differences:
+# 1. Nginx Ingress: TLS in Ingress resource
+#    Gateway API: TLS in Gateway resource (centralized)
+# 2. Nginx Ingress: Each Ingress can have different TLS config
+#    Gateway API: TLS configured once at Gateway, shared by HTTPRoutes
+# 3. Nginx Ingress: Certificate management per Ingress
+#    Gateway API: Centralized certificate management
+# 4. Gateway API: Better for multi-tenant scenarios
+#    Gateway API: Clearer separation of infrastructure (TLS) and application (routing)
+

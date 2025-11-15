@@ -1,0 +1,406 @@
+# Core Concepts: GatewayClass, Gateway, and HTTPRoute
+
+Understanding the core resources is essential to working with Gateway API. This guide explains each resource and compares them to their Nginx Ingress equivalents.
+
+## Overview: The Three Pillars
+
+Gateway API has three main resources that work together:
+
+1. **GatewayClass** - Defines the type of Gateway (like IngressClass)
+2. **Gateway** - Defines network endpoints (like Ingress Controller setup)
+3. **HTTPRoute** - Defines routing rules (like Ingress resource)
+
+## 1. GatewayClass
+
+### What is GatewayClass?
+
+`GatewayClass` defines a class of Gateways that share the same configuration and behavior. It's similar to `IngressClass` in the Ingress world.
+
+### Comparison: IngressClass vs GatewayClass
+
+**Nginx Ingress - IngressClass:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+spec:
+  controller: k8s.io/ingress-nginx
+```
+
+**Gateway API - GatewayClass:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway
+```
+
+### Key Differences
+
+| Feature | IngressClass | GatewayClass |
+|---------|-------------|--------------|
+| Purpose | Defines controller type | Defines Gateway type |
+| Controller | Single controller string | Controller name + parameters |
+| Parameters | Limited | Rich parameter support |
+| Scope | Cluster-wide | Cluster-wide |
+
+### GatewayClass Example
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway
+  description: "Nginx Gateway API implementation"
+```
+
+**Who manages it?** Cluster administrators
+
+## 2. Gateway
+
+### What is Gateway?
+
+`Gateway` defines network endpoints (listeners) that receive traffic. It's similar to setting up an Ingress Controller, but defined as a Kubernetes resource.
+
+### Comparison: Ingress Controller Setup vs Gateway
+
+**Nginx Ingress - Controller Setup:**
+- Deployed as a Deployment/DaemonSet
+- Configured via ConfigMap
+- Listens on ports 80/443
+- Managed outside of Kubernetes resources
+
+**Gateway API - Gateway Resource:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+### Key Differences
+
+| Feature | Ingress Controller | Gateway |
+|---------|-------------------|---------|
+| Definition | Deployment/ConfigMap | Kubernetes resource |
+| Listeners | Hardcoded in controller | Defined in Gateway spec |
+| TLS | Certificate management separate | TLS config in Gateway |
+| Namespace | Controller in one namespace | Gateway can control route access |
+
+### Gateway Components
+
+#### Listeners
+
+Listeners define what ports and protocols the Gateway accepts:
+
+```yaml
+listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+  - name: https
+    protocol: HTTPS
+    port: 443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: my-cert
+```
+
+#### Allowed Routes
+
+Controls which HTTPRoutes can attach to this Gateway:
+
+```yaml
+allowedRoutes:
+  namespaces:
+    from: All  # or Same, or Selector
+```
+
+**Who manages it?** Infrastructure/Operations teams
+
+## 3. HTTPRoute
+
+### What is HTTPRoute?
+
+`HTTPRoute` defines routing rules for HTTP/HTTPS traffic. It's the direct replacement for the `Ingress` resource.
+
+### Comparison: Ingress vs HTTPRoute
+
+**Nginx Ingress - Ingress Resource:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+```
+
+**Gateway API - HTTPRoute:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: my-service
+          port: 80
+```
+
+### Key Differences
+
+| Feature | Ingress | HTTPRoute |
+|---------|---------|-----------|
+| Parent Reference | `ingressClassName` | `parentRefs` (explicit Gateway) |
+| Hostnames | `rules[].host` | `hostnames` (top-level) |
+| Path Matching | `paths[].path` | `matches[].path` |
+| Backend | `backend.service` | `backendRefs` |
+| Advanced Features | Annotations | Native filters |
+
+### HTTPRoute Structure
+
+#### Parent References
+
+HTTPRoutes must reference which Gateway(s) they attach to:
+
+```yaml
+parentRefs:
+  - name: my-gateway
+    namespace: default
+```
+
+#### Hostnames
+
+Define which hostnames this route handles:
+
+```yaml
+hostnames:
+  - example.com
+  - www.example.com
+```
+
+#### Rules
+
+Rules contain matches and actions:
+
+```yaml
+rules:
+  - matches:
+      - path:
+          type: PathPrefix
+          value: /api
+    backendRefs:
+      - name: my-service
+        port: 80
+```
+
+**Who manages it?** Application developers
+
+## 4. BackendRef
+
+### What is BackendRef?
+
+`BackendRef` is how HTTPRoute references backend services. It's more powerful than Ingress backends.
+
+### Comparison: Ingress Backend vs BackendRef
+
+**Nginx Ingress - Backend:**
+```yaml
+backend:
+  service:
+    name: my-service
+    port:
+      number: 80
+```
+
+**Gateway API - BackendRef:**
+```yaml
+backendRefs:
+  - name: my-service
+    port: 80
+    weight: 100
+```
+
+### Advanced BackendRef Features
+
+#### Weighted Routing
+
+```yaml
+backendRefs:
+  - name: stable-service
+    port: 80
+    weight: 90
+  - name: canary-service
+    port: 80
+    weight: 10
+```
+
+This is native in Gateway API, but requires annotations in Nginx Ingress!
+
+## Role-Oriented Model
+
+One of Gateway API's key innovations is the **role-oriented model**:
+
+### Infrastructure Team (Gateway)
+- Manages `GatewayClass` and `Gateway` resources
+- Controls ports, protocols, TLS certificates
+- Sets namespace access policies
+- Handles infrastructure concerns
+
+### Application Team (HTTPRoute)
+- Manages `HTTPRoute` resources
+- Defines routing rules, hostnames, paths
+- References backend services
+- Handles application concerns
+
+### Benefits
+
+1. **Clear Separation**: Infrastructure and app teams don't step on each other
+2. **RBAC**: Different permissions for different roles
+3. **Scalability**: App teams can create routes without touching infrastructure
+4. **Portability**: Routes work with any Gateway
+
+## Complete Example: Side-by-Side
+
+### Nginx Ingress Setup
+
+**Step 1: IngressClass**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+spec:
+  controller: k8s.io/ingress-nginx
+```
+
+**Step 2: Ingress Resource**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+### Gateway API Setup
+
+**Step 1: GatewayClass**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway
+```
+
+**Step 2: Gateway**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+**Step 3: HTTPRoute**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-app
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: app-service
+          port: 80
+```
+
+## Summary
+
+| Resource | Nginx Ingress Equivalent | Who Manages |
+|----------|-------------------------|-------------|
+| GatewayClass | IngressClass | Cluster Admin |
+| Gateway | Ingress Controller Setup | Infrastructure Team |
+| HTTPRoute | Ingress Resource | Application Team |
+| BackendRef | Ingress Backend | Application Team |
+
+## Next Steps
+
+Now that you understand the core concepts, let's learn about basic routing:
+
+👉 **[Next: Basic Routing →](./03-basic-routing.md)**
+
+## Related Examples
+
+- `../Examples/01-basic-setup/gatewayclass.yaml` - GatewayClass example
+- `../Examples/01-basic-setup/gateway.yaml` - Gateway example
+- `../Examples/01-basic-setup/httproute-basic.yaml` - Basic HTTPRoute
+- `../Examples/01-basic-setup/ingress-equivalent.yaml` - Nginx Ingress equivalent
+

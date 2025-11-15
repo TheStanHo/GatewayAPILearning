@@ -1,0 +1,80 @@
+# IDE and Editor files
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS-specific files
+Thumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Downloaded/Extracted files
+setup/nginx-gateway-fabric/
+*.tar
+*.tar.gz
+*.zip
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Kubernetes local config (if any)
+kubeconfig
+.kube/
+
+# Helm charts (downloaded)
+*.tgz
+charts/
+
+# Secrets and sensitive data
+*.key
+*.pem
+*.crt
+*.cert
+secrets/
+.env
+.env.local
+*.jwt
+license.jwt
+
+# Minikube local files (if stored in project)
+.minikube/
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Node modules (if any scripts use Node.js)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python (if any scripts use Python)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Local test files
+test-results/
+coverage/
+
