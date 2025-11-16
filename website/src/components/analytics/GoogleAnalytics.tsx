@@ -4,11 +4,10 @@ import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import { hasAnalyticsConsent } from '@/lib/cookies'
 
-interface GoogleAnalyticsProps {
-  gaId: string
-}
+// Google Analytics Tracking ID - public value, safe to hardcode
+const GA_ID = 'G-4CQRNDYJY5'
 
-export function GoogleAnalytics({ gaId }: GoogleAnalyticsProps) {
+export function GoogleAnalytics() {
   const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
@@ -25,7 +24,7 @@ export function GoogleAnalytics({ gaId }: GoogleAnalyticsProps) {
   return (
     <>
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
         strategy="afterInteractive"
       />
       <Script id="google-analytics" strategy="afterInteractive">
@@ -33,7 +32,7 @@ export function GoogleAnalytics({ gaId }: GoogleAnalyticsProps) {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${gaId}');
+          gtag('config', '${GA_ID}');
         `}
       </Script>
     </>
