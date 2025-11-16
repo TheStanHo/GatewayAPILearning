@@ -10,7 +10,24 @@ const warnings = []
 
 function validateYAML(filePath, content) {
   try {
-    yaml.load(content)
+    // Check if file contains multiple documents (separated by ---)
+    // Count document separators (--- at start of line)
+    const documentSeparators = (content.match(/^---/gm) || []).length
+    const hasMultipleDocuments = documentSeparators > 0
+    
+    if (hasMultipleDocuments) {
+      // Use loadAll for multi-document YAML files
+      const docs = []
+      yaml.loadAll(content, (doc) => {
+        if (doc !== null && doc !== undefined) {
+          docs.push(doc)
+        }
+      })
+      // If loadAll completes without error, all documents are valid
+    } else {
+      // Single document
+      yaml.load(content)
+    }
   } catch (e) {
     errors.push({
       type: 'error',
@@ -22,77 +39,106 @@ function validateYAML(filePath, content) {
 }
 
 function validateAPIVersion(content, filePath) {
-  const gatewayAPIPattern = /apiVersion:\s*['"]?gateway\.networking\.k8s\.io\/([^'"]+)['"]?/g
+  // Match apiVersion: gateway.networking.k8s.io/v1 (with optional quotes)
+  const gatewayAPIPattern = /apiVersion:\s*['"]?gateway\.networking\.k8s\.io\/(v[\w.]+)['"]?/g
   let match
+  const foundVersions = new Set()
 
   while ((match = gatewayAPIPattern.exec(content)) !== null) {
-    const version = match[1]
-    if (!GATEWAY_API_VERSIONS.includes(version)) {
-      warnings.push({
-        type: 'warning',
-        file: filePath,
-        message: `Unknown Gateway API version: ${version}. Supported versions: ${GATEWAY_API_VERSIONS.join(', ')}`,
-      })
+    const version = match[1].trim()
+    if (version) {
+      foundVersions.add(version)
+      
+      if (!GATEWAY_API_VERSIONS.includes(version)) {
+        warnings.push({
+          type: 'warning',
+          file: filePath,
+          message: `Unknown Gateway API version: ${version}. Supported versions: ${GATEWAY_API_VERSIONS.join(', ')}`,
+        })
+      }
     }
-    if (version !== 'v1') {
+  }
+  
+  // Only warn about non-v1 versions if v1 is available and they're using something else
+  foundVersions.forEach(version => {
+    if (version !== 'v1' && GATEWAY_API_VERSIONS.includes(version)) {
       warnings.push({
         type: 'warning',
         file: filePath,
         message: `Using ${version} instead of v1. Consider updating to v1 for stable API.`,
       })
     }
-  }
+  })
 }
 
 function validateKubernetesResource(content, filePath) {
   try {
-    const parsed = yaml.load(content)
-
-    if (!parsed || typeof parsed !== 'object') {
-      return
-    }
-
-    if (!parsed.apiVersion) {
-      errors.push({
-        type: 'error',
-        file: filePath,
-        message: 'Missing required field: apiVersion',
+    // Check if file contains multiple documents
+    const hasMultipleDocuments = content.split(/^---/m).length > 2
+    
+    if (hasMultipleDocuments) {
+      // Validate each document in multi-document YAML
+      yaml.loadAll(content, (doc) => {
+        validateSingleResource(doc, filePath)
       })
-    }
-
-    if (!parsed.kind) {
-      errors.push({
-        type: 'error',
-        file: filePath,
-        message: 'Missing required field: kind',
-      })
-    }
-
-    if (!parsed.metadata || !parsed.metadata.name) {
-      errors.push({
-        type: 'error',
-        file: filePath,
-        message: 'Missing required field: metadata.name',
-      })
-    }
-
-    if (parsed.kind === 'Gateway' && !parsed.spec?.gatewayClassName) {
-      errors.push({
-        type: 'error',
-        file: filePath,
-        message: 'Gateway resource missing required field: spec.gatewayClassName',
-      })
-    }
-
-    if (parsed.kind === 'HTTPRoute' && !parsed.spec?.parentRefs) {
-      errors.push({
-        type: 'error',
-        file: filePath,
-        message: 'HTTPRoute resource missing required field: spec.parentRefs',
-      })
+    } else {
+      // Single document
+      const parsed = yaml.load(content)
+      validateSingleResource(parsed, filePath)
     }
   } catch (e) {
     // Already handled by YAML validation
+  }
+}
+
+function validateSingleResource(parsed, filePath) {
+  if (!parsed || typeof parsed !== 'object') {
+    return
+  }
+
+  // Skip validation for non-Kubernetes resources (e.g., comments-only files)
+  if (!parsed.apiVersion && !parsed.kind) {
+    return
+  }
+
+  if (!parsed.apiVersion) {
+    errors.push({
+      type: 'error',
+      file: filePath,
+      message: 'Missing required field: apiVersion',
+    })
+  }
+
+  if (!parsed.kind) {
+    errors.push({
+      type: 'error',
+      file: filePath,
+      message: 'Missing required field: kind',
+    })
+  }
+
+  if (!parsed.metadata || !parsed.metadata.name) {
+    errors.push({
+      type: 'error',
+      file: filePath,
+      message: 'Missing required field: metadata.name',
+    })
+  }
+
+  if (parsed.kind === 'Gateway' && !parsed.spec?.gatewayClassName) {
+    errors.push({
+      type: 'error',
+      file: filePath,
+      message: 'Gateway resource missing required field: spec.gatewayClassName',
+    })
+  }
+
+  if (parsed.kind === 'HTTPRoute' && !parsed.spec?.parentRefs) {
+    errors.push({
+      type: 'error',
+      file: filePath,
+      message: 'HTTPRoute resource missing required field: spec.parentRefs',
+    })
   }
 }
 
