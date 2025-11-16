@@ -4,6 +4,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getDocBySlug, getDocMetadata } from '@/lib/content'
 import { getContentBySlug } from '@/lib/mdx'
 import { getSourceAttribution } from '@/lib/sources'
+import { generateDocMetadata, generateArticleSchema, generateBreadcrumbSchema, generateCourseSchema } from '@/lib/seo'
 import TableOfContents from '@/components/TableOfContents'
 import { DifficultyBadge } from '@/components/DifficultyBadge'
 import { BookOpen, BookMarked } from 'lucide-react'
@@ -14,6 +15,9 @@ import { CopyButton } from '@/components/code/CopyButton'
 import { Alert } from '@/components/content/Alert'
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import React from 'react'
+import type { Metadata } from 'next'
+
+const baseUrl = 'https://gatewayapi.stanho.dev'
 
 // Components available in MDX
 // Note: ssr: false removed for Next.js 16 compatibility
@@ -159,6 +163,32 @@ export async function generateStaticParams() {
     params.push({ slug: [doc.slug] })
   })
   return params
+}
+
+// Generate metadata for each doc page
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params
+  
+  if (!resolvedParams.slug || resolvedParams.slug.length === 0) {
+    return {
+      title: 'Documentation | Gateway API Learning',
+      description: 'Comprehensive guides covering Gateway API concepts, from basics to advanced topics',
+    }
+  }
+
+  const slug = resolvedParams.slug[0]
+  const doc = await getDocBySlug(slug)
+  
+  if (!doc) {
+    return {}
+  }
+
+  const docMetadata = getDocMetadata().find(d => d.slug === slug)
+  if (!docMetadata) {
+    return {}
+  }
+
+  return generateDocMetadata(docMetadata, doc.content)
 }
 
 export default async function DocPage({ params }: PageProps) {
@@ -320,8 +350,46 @@ export default async function DocPage({ params }: PageProps) {
 
   const difficulty = getDifficulty()
 
+  // Get description from doc metadata or frontmatter
+  const docMetadata = getDocMetadata().find(d => d.slug === slug)
+  const description = docMetadata?.description || doc.data?.description || `Learn about ${title} in Kubernetes Gateway API`
+
+  // Generate structured data
+  const articleSchema = generateArticleSchema(
+    title,
+    description,
+    slug
+  )
+
+  const courseSchema = generateCourseSchema(
+    title,
+    description,
+    `${baseUrl}/docs/${slug}`,
+    difficulty || undefined
+  )
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: baseUrl },
+    { name: 'Docs', url: `${baseUrl}/docs` },
+    { name: title, url: `${baseUrl}/docs/${slug}` },
+  ])
+
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      
       <article className="prose prose-lg max-w-none">
         <div className="mb-6 space-y-3">
           <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>

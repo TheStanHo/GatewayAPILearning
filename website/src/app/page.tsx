@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { BookOpen, FileCode, GraduationCap } from 'lucide-react'
+import { generateWebsiteSchema } from '@/lib/seo'
+import type { Metadata } from 'next'
 
 // Lazy load diagram components (load after initial page render)
 // Note: ssr: false removed for Next.js 16 compatibility
@@ -12,9 +14,35 @@ const GatewayRelationships = dynamic(() => import('@/components/diagrams/Gateway
   loading: () => <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-lg h-64 animate-pulse" />
 })
 
+export const metadata: Metadata = {
+  title: 'Gateway API Learning - Learn Kubernetes Gateway API with NGINX Gateway Fabric',
+  description: 'Comprehensive learning resource for Kubernetes Gateway API, featuring interactive tutorials, examples, and guides for NGINX Gateway Fabric. Start learning Gateway API step-by-step with clear explanations and hands-on examples.',
+  keywords: ['Gateway API', 'Kubernetes', 'NGINX Gateway Fabric', 'HTTPRoute', 'Gateway', 'Kubernetes Networking', 'Learn Gateway API', 'Gateway API Tutorial'],
+  openGraph: {
+    title: 'Gateway API Learning - Learn Kubernetes Gateway API',
+    description: 'Comprehensive learning resource for Kubernetes Gateway API with interactive tutorials and examples',
+    type: 'website',
+    url: 'https://gatewayapi.stanho.dev',
+    siteName: 'Gateway API Learning',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Gateway API Learning',
+    description: 'Learn Kubernetes Gateway API with interactive tutorials and examples',
+  },
+}
+
 export default function Home() {
+  const websiteSchema = generateWebsiteSchema()
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       <div className="container mx-auto px-4 py-8 md:py-16">
         <div className="text-center mb-8 md:mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
