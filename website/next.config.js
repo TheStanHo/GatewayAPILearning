@@ -16,8 +16,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['react-syntax-highlighter'],
   },
-  // Reduce JavaScript bundle size
-  swcMinify: true,
+  // Note: swcMinify is now default in Next.js 16 and cannot be configured
   // Optimize production builds
   productionBrowserSourceMaps: false,
 }

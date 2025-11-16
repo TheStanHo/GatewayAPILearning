@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next'
 import { getDocMetadata } from '@/lib/content'
 import { getExampleCategories } from '@/lib/examples'
 
+export const dynamic = 'force-static'
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://gatewayapi.stanho.dev'
   

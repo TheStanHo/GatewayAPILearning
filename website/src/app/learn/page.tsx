@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import Link from 'next/link'
 import LearningPath from '@/components/interactive/LearningPath'
 
@@ -157,7 +157,11 @@ export default function LearnPage() {
 
     // Listen for custom events (for same-page updates from ProgressTracker)
     const handleCustomEvent = () => {
-      loadProgressFromStorage()
+      // Use startTransition to mark this as a non-urgent update
+      // This prevents the "Cannot update a component while rendering" error
+      startTransition(() => {
+        loadProgressFromStorage()
+      })
     }
 
     window.addEventListener('storage', handleStorageChange)
@@ -216,7 +220,10 @@ export default function LearnPage() {
       localStorage.setItem('doc-progress', JSON.stringify(progress))
       
       // Dispatch custom event to notify ProgressTracker on same page
-      window.dispatchEvent(new Event('doc-progress-updated'))
+      // Defer the event dispatch to avoid updating state during render
+      setTimeout(() => {
+        window.dispatchEvent(new Event('doc-progress-updated'))
+      }, 0)
       
       return next
     })

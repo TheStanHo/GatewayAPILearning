@@ -116,6 +116,11 @@ export function ProgressTracker() {
             return doc
           })
           localStorage.setItem('doc-progress', JSON.stringify(updated))
+          // Dispatch custom event to notify Learn page on same page
+          // Defer the event dispatch to avoid updating state during render
+          setTimeout(() => {
+            window.dispatchEvent(new Event('doc-progress-updated'))
+          }, 0)
           return updated
         })
       }
@@ -132,7 +137,10 @@ export function ProgressTracker() {
       })
       localStorage.setItem('doc-progress', JSON.stringify(updated))
       // Dispatch custom event to notify Learn page on same page
-      window.dispatchEvent(new Event('doc-progress-updated'))
+      // Defer the event dispatch to avoid updating state during render
+      setTimeout(() => {
+        window.dispatchEvent(new Event('doc-progress-updated'))
+      }, 0)
       return updated
     })
   }

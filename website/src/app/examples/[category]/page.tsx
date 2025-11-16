@@ -7,15 +7,15 @@ import { getExampleSourceAttribution } from '@/lib/sources'
 import { ScrollToAnchor } from '@/components/examples/ScrollToAnchor'
 import path from 'path'
 
+// Note: ssr: false removed for Next.js 16 compatibility
 const CodeViewer = dynamic(
-  () => import('@/components/code-viewer/CodeViewer'),
-  { ssr: false }
+  () => import('@/components/code-viewer/CodeViewer')
 )
 
 interface PageProps {
-  params: {
+  params: Promise<{
     category: string
-  }
+  }>
 }
 
 export async function generateStaticParams() {
@@ -25,9 +25,12 @@ export async function generateStaticParams() {
   }))
 }
 
-export default function ExampleCategoryPage({ params }: PageProps) {
+export default async function ExampleCategoryPage({ params }: PageProps) {
+  // Await params in Next.js 16
+  const resolvedParams = await params
+  
   const categories = getExampleCategories()
-  const category = categories.find((c) => c.name === params.category)
+  const category = categories.find((c) => c.name === resolvedParams.category)
 
   if (!category) {
     notFound()
