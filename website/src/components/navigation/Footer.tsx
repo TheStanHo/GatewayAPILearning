@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getVersionString } from '@/lib/version'
+import { CookieSettingsButton } from '@/components/cookies/CookieSettingsButton'
 
 export default function Footer() {
   const versionString = getVersionString()
@@ -54,6 +55,15 @@ export default function Footer() {
               >
                 Examples
               </Link>
+              <span className="hidden md:inline">•</span>
+              <Link 
+                href="/privacy" 
+                className="hover:text-gray-900 transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <span className="hidden md:inline">•</span>
+              <CookieSettingsButton />
               <span className="hidden md:inline">•</span>
               <a
                 href="https://gateway-api.sigs.k8s.io/"

@@ -7,6 +7,8 @@ import Header from '@/components/navigation/Header'
 import Breadcrumbs from '@/components/navigation/Breadcrumbs'
 import Footer from '@/components/navigation/Footer'
 import { ProgressTracker } from '@/components/progress/ProgressTracker'
+import { CookieConsent } from '@/components/cookies/CookieConsent'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 
 // Optimize font loading - reduce font weight variants
 const inter = Inter({ 
@@ -78,9 +80,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID
+
   return (
     <html lang="en" className={`h-full ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans h-full antialiased leading-relaxed">
+        {/* Google Analytics - Only loads after user consent */}
+        {gaId && <GoogleAnalytics gaId={gaId} />}
+        {/* Cookie Consent Banner */}
+        <CookieConsent />
         {/* Skip to main content link for accessibility */}
         <a
           href="#main-content"
