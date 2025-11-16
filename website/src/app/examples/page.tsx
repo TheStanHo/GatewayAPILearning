@@ -26,28 +26,33 @@ export default async function ExamplesPage() {
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <Link
-            key={category.name}
-            href={`/examples/${category.name}`}
-            className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#10b981] hover:border-[#047857] group"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-[#d1fae5] rounded-lg group-hover:bg-[#10b981] transition-colors">
-                <FileCode className="w-5 h-5 text-[#10b981] group-hover:text-white transition-colors" />
+        {categories.map((category) => {
+          // Count only YAML/YML files as examples (exclude markdown documentation files)
+          const exampleCount = category.files.filter(f => !f.name.endsWith('.md')).length
+          
+          return (
+            <Link
+              key={category.name}
+              href={`/examples/${category.name}`}
+              className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#10b981] hover:border-[#047857] group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-[#d1fae5] rounded-lg group-hover:bg-[#10b981] transition-colors">
+                  <FileCode className="w-5 h-5 text-[#10b981] group-hover:text-white transition-colors" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {category.name
+                    .split('-')
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')}
+                </h2>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {category.name
-                  .split('-')
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')}
-              </h2>
-            </div>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              {category.files.length} example{category.files.length !== 1 ? 's' : ''}
-            </p>
-          </Link>
-        ))}
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {exampleCount} example{exampleCount !== 1 ? 's' : ''}
+              </p>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
