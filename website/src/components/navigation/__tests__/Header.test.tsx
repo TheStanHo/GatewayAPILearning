@@ -10,7 +10,7 @@ describe('Header', () => {
 
   it('renders search input', () => {
     render(<Header />)
-    const searchInput = screen.getByPlaceholderText('Search documentation...')
+    const searchInput = screen.getByPlaceholderText('Search... (Ctrl+K)')
     expect(searchInput).toBeInTheDocument()
   })
 
@@ -18,7 +18,7 @@ describe('Header', () => {
     const user = userEvent.setup()
     render(<Header />)
     
-    const searchInput = screen.getByPlaceholderText('Search documentation...')
+    const searchInput = screen.getByPlaceholderText('Search... (Ctrl+K)')
     await user.type(searchInput, 'gateway')
     
     expect(searchInput).toHaveValue('gateway')

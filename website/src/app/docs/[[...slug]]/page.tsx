@@ -13,39 +13,33 @@ import remarkGfm from 'remark-gfm'
 import { CopyButton } from '@/components/code/CopyButton'
 import { Alert } from '@/components/content/Alert'
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
+import React from 'react'
 
 // Components available in MDX
+// Note: ssr: false removed for Next.js 16 compatibility
 const ArchitectureComparison = dynamic(
-  () => import('@/components/diagrams/ArchitectureComparison'),
-  { ssr: false }
+  () => import('@/components/diagrams/ArchitectureComparison')
 )
 const TrafficSplitting = dynamic(
-  () => import('@/components/diagrams/TrafficSplitting'),
-  { ssr: false }
+  () => import('@/components/diagrams/TrafficSplitting')
 )
 const CoreConceptsRelationship = dynamic(
-  () => import('@/components/diagrams/CoreConceptsRelationship'),
-  { ssr: false }
+  () => import('@/components/diagrams/CoreConceptsRelationship')
 )
 const MigrationFlow = dynamic(
-  () => import('@/components/diagrams/MigrationFlow'),
-  { ssr: false }
+  () => import('@/components/diagrams/MigrationFlow')
 )
 const PathMatching = dynamic(
-  () => import('@/components/diagrams/PathMatching'),
-  { ssr: false }
+  () => import('@/components/diagrams/PathMatching')
 )
 const TLSFlow = dynamic(
-  () => import('@/components/diagrams/TLSFlow'),
-  { ssr: false }
+  () => import('@/components/diagrams/TLSFlow')
 )
 const HeaderMatching = dynamic(
-  () => import('@/components/diagrams/HeaderMatching'),
-  { ssr: false }
+  () => import('@/components/diagrams/HeaderMatching')
 )
 const RequestModification = dynamic(
-  () => import('@/components/diagrams/RequestModification'),
-  { ssr: false }
+  () => import('@/components/diagrams/RequestModification')
 )
 
 // Helper function to extract text from React children
@@ -74,7 +68,7 @@ const createHeadingComponent = (level: number) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
     
-    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements
+    const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements
     return <HeadingTag id={id} className="scroll-mt-24" {...props}>{children}</HeadingTag>
   }
 }
@@ -151,9 +145,9 @@ const components = {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug?: string[]
-  }
+  }>
 }
 
 export async function generateStaticParams() {
@@ -168,8 +162,11 @@ export async function generateStaticParams() {
 }
 
 export default async function DocPage({ params }: PageProps) {
+  // Await params in Next.js 16
+  const resolvedParams = await params
+  
   // If no slug provided, show the docs index
-  if (!params.slug || params.slug.length === 0) {
+  if (!resolvedParams.slug || resolvedParams.slug.length === 0) {
     const docs = getDocMetadata()
     const content = await getContentBySlug('docs')
     
@@ -263,7 +260,7 @@ export default async function DocPage({ params }: PageProps) {
     )
   }
 
-  const slug = params.slug[0]
+  const slug = resolvedParams.slug[0]
   
   // Get doc from MDX (all docs are now in website/content/docs/)
   const doc = await getDocBySlug(slug)

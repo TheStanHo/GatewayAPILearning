@@ -3,13 +3,12 @@ import dynamic from 'next/dynamic'
 import { BookOpen, FileCode, GraduationCap } from 'lucide-react'
 
 // Lazy load diagram components (load after initial page render)
+// Note: ssr: false removed for Next.js 16 compatibility
 const GatewayFlow = dynamic(() => import('@/components/diagrams/GatewayFlow'), {
-  ssr: false,
   loading: () => <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-lg h-64 animate-pulse" />
 })
 
 const GatewayRelationships = dynamic(() => import('@/components/diagrams/GatewayRelationships'), {
-  ssr: false,
   loading: () => <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-lg h-64 animate-pulse" />
 })
 
