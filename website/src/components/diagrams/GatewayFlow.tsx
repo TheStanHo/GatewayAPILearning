@@ -3,12 +3,13 @@
 import { memo } from 'react'
 
 function GatewayFlow() {
+  // Using darker shades (600-700) for better contrast with white text (WCAG AA compliant)
   const components = [
-    { id: 1, name: 'Client', color: 'bg-blue-500' },
-    { id: 2, name: 'Gateway', color: 'bg-green-500' },
-    { id: 3, name: 'HTTPRoute', color: 'bg-yellow-500' },
-    { id: 4, name: 'Service', color: 'bg-purple-500' },
-    { id: 5, name: 'Pods', color: 'bg-pink-500' },
+    { id: 1, name: 'Client', color: 'bg-blue-600' },
+    { id: 2, name: 'Gateway', color: 'bg-green-600' },
+    { id: 3, name: 'HTTPRoute', color: 'bg-yellow-600', textColor: 'text-gray-900' }, // Yellow needs dark text
+    { id: 4, name: 'Service', color: 'bg-purple-600' },
+    { id: 5, name: 'Pods', color: 'bg-pink-600' },
   ]
 
   return (
@@ -19,7 +20,7 @@ function GatewayFlow() {
         {components.map((component, index) => (
           <div key={component.id} className="flex items-center">
             <div
-              className={`w-24 h-24 ${component.color} rounded-lg flex items-center justify-center text-white font-semibold shadow-md text-sm text-center px-2 animate-scale-in`}
+              className={`w-24 h-24 ${component.color} rounded-lg flex items-center justify-center ${component.textColor || 'text-white'} font-semibold shadow-md text-sm text-center px-2 animate-scale-in`}
               style={{ 
                 animationDelay: `${index * 0.2}s`,
                 animationFillMode: 'both'
@@ -44,7 +45,7 @@ function GatewayFlow() {
         {components.map((component, index) => (
           <div key={component.id} className="flex flex-col items-center w-full">
             <div
-              className={`w-20 h-20 ${component.color} rounded-lg flex items-center justify-center text-white font-semibold shadow-md text-xs text-center px-2 animate-scale-in`}
+              className={`w-20 h-20 ${component.color} rounded-lg flex items-center justify-center ${component.textColor || 'text-white'} font-semibold shadow-md text-xs text-center px-2 animate-scale-in`}
               style={{ 
                 animationDelay: `${index * 0.2}s`,
                 animationFillMode: 'both'

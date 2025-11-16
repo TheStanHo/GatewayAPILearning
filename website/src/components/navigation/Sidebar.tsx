@@ -146,11 +146,11 @@ export default function Sidebar() {
             <Link href="/" className="text-2xl font-bold text-white">
               Gateway API
             </Link>
-            <p className="text-sm text-gray-400 mt-1">Learning Resource</p>
+            <p className="text-sm text-gray-300 mt-1">Learning Resource</p>
           </div>
           {/* Close button for mobile */}
           <button
-            className="md:hidden text-gray-400 hover:text-white p-1 transition-colors"
+            className="md:hidden text-gray-300 hover:text-white p-1 transition-colors"
             onClick={() => setIsOpen(false)}
             aria-label="Close menu"
           >
@@ -173,13 +173,13 @@ export default function Sidebar() {
                 return 'bg-[#3b82f6]'
               }
               
-              // Get text color class
+              // Get text color class - using lighter colors for better contrast on bg-gray-900
               const getTextColorClass = () => {
                 if (item.difficulty === 'beginner') return 'text-[#10b981]'
                 if (item.difficulty === 'intermediate') return 'text-[#f59e0b]'
                 if (item.difficulty === 'advanced') return 'text-[#ef4444]'
                 if (item.contentType === 'guides') return 'text-[#8b5cf6]'
-                return 'text-gray-400'
+                return 'text-gray-300' // Changed from text-gray-400 for better contrast
               }
               
               return (
@@ -212,7 +212,7 @@ export default function Sidebar() {
                               `}
                               onClick={() => setIsOpen(false)}
                             >
-                              <ChildIcon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                              <ChildIcon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
                               <span className="flex-1">{child.title}</span>
                               {isActive && <ChevronRight className="w-4 h-4" />}
                             </Link>
@@ -239,7 +239,7 @@ export default function Sidebar() {
               `}
               onClick={() => setIsOpen(false)}
             >
-              <FileCode className={`w-4 h-4 flex-shrink-0 ${pathname.startsWith('/examples') ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+              <FileCode className={`w-4 h-4 flex-shrink-0 ${pathname.startsWith('/examples') ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
               <span>Examples</span>
               {pathname.startsWith('/examples') && <ChevronRight className="w-4 h-4" />}
             </Link>
@@ -255,7 +255,7 @@ export default function Sidebar() {
               `}
               onClick={() => setIsOpen(false)}
             >
-              <GraduationCap className={`w-4 h-4 flex-shrink-0 ${pathname.startsWith('/learn') ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+              <GraduationCap className={`w-4 h-4 flex-shrink-0 ${pathname.startsWith('/learn') ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
               <span>Learn</span>
               {pathname.startsWith('/learn') && <ChevronRight className="w-4 h-4" />}
             </Link>

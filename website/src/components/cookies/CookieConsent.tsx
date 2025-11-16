@@ -58,36 +58,41 @@ export function CookieConsent() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">
                   Cookie Consent
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-600 leading-relaxed mb-3">
                   We use cookies to analyze website traffic and improve your experience. 
-                  By clicking &quot;Accept All&quot;, you consent to our use of cookies. 
-                  You can also{' '}
+                  By clicking &quot;Accept All&quot;, you consent to our use of cookies.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                  <span className="text-sm text-gray-600">You can also:</span>
                   <button
                     onClick={handleCustomize}
-                    className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    className="inline-flex items-center min-h-[44px] px-3 py-2 text-sm text-blue-600 hover:text-blue-800 underline font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                    aria-label="Customize cookie preferences"
                   >
                     customize your preferences
                   </button>
-                  {' '}or{' '}
+                  <span className="text-sm text-gray-600">or</span>
                   <a
                     href="/privacy"
-                    className="text-blue-600 hover:text-blue-800 underline"
+                    className="inline-flex items-center min-h-[44px] px-3 py-2 text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                    aria-label="View privacy policy"
                   >
                     view our privacy policy
                   </a>
-                  .
-                </p>
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <button
                   onClick={handleRejectAll}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  className="min-h-[44px] px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  aria-label="Reject all cookies"
                 >
                   Reject All
                 </button>
                 <button
                   onClick={handleAcceptAll}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                  className="min-h-[44px] px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="Accept all cookies"
                 >
                   Accept All
                 </button>
