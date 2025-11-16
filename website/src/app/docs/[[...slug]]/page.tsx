@@ -26,6 +26,26 @@ const CoreConceptsRelationship = dynamic(
   () => import('@/components/diagrams/CoreConceptsRelationship'),
   { ssr: false }
 )
+const MigrationFlow = dynamic(
+  () => import('@/components/diagrams/MigrationFlow'),
+  { ssr: false }
+)
+const PathMatching = dynamic(
+  () => import('@/components/diagrams/PathMatching'),
+  { ssr: false }
+)
+const TLSFlow = dynamic(
+  () => import('@/components/diagrams/TLSFlow'),
+  { ssr: false }
+)
+const HeaderMatching = dynamic(
+  () => import('@/components/diagrams/HeaderMatching'),
+  { ssr: false }
+)
+const RequestModification = dynamic(
+  () => import('@/components/diagrams/RequestModification'),
+  { ssr: false }
+)
 
 // Helper function to extract text from React children
 const extractText = (children: any): string => {
@@ -62,6 +82,11 @@ const components = {
   ArchitectureComparison,
   TrafficSplitting,
   CoreConceptsRelationship,
+  MigrationFlow,
+  PathMatching,
+  TLSFlow,
+  HeaderMatching,
+  RequestModification,
   Alert,
   h2: createHeadingComponent(2),
   h3: createHeadingComponent(3),
