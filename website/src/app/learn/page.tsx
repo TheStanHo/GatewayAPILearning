@@ -1,8 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import LearningPath from '@/components/interactive/LearningPath'
+
+// Map step IDs to doc slugs (matching ProgressTracker)
+const STEP_TO_SLUG: Record<string, string> = {
+  '1': '01-introduction',
+  '2': '02-core-concepts',
+  '3': '03-basic-routing',
+  '4': '04-advanced-routing',
+  '5': '05-traffic-splitting',
+  '6': '06-tls-ssl',
+  '7': '07-request-response-modifications',
+  '8': '08-policies',
+  '9': '09-migration-guide',
+  '10': '10-best-practices',
+}
 
 const learningSteps = [
   {
@@ -92,17 +106,118 @@ const intermediateSteps = learningSteps.filter((s) => s.level === 'intermediate'
 const advancedSteps = learningSteps.filter((s) => s.level === 'advanced')
 const guideSteps = learningSteps.filter((s) => s.level === 'guide')
 
+interface DocProgress {
+  slug: string
+  title: string
+  completed: boolean
+  lastViewed?: number
+}
+
 export default function LearnPage() {
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
 
+  // Function to load and sync progress from localStorage
+  const loadProgressFromStorage = useCallback(() => {
+    const saved = localStorage.getItem('doc-progress')
+    if (saved) {
+      try {
+        const progress: DocProgress[] = JSON.parse(saved)
+        const completed = new Set<string>()
+        progress.forEach((doc) => {
+          if (doc.completed) {
+            // Find step ID from slug
+            const stepId = Object.entries(STEP_TO_SLUG).find(
+              ([_, slug]) => slug === doc.slug
+            )?.[0]
+            if (stepId) {
+              completed.add(stepId)
+            }
+          }
+        })
+        setCompletedSteps(completed)
+      } catch (e) {
+        console.error('Failed to parse progress:', e)
+      }
+    }
+  }, [])
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    loadProgressFromStorage()
+  }, [loadProgressFromStorage])
+
+  // Listen for storage events to sync with ProgressTracker
+  useEffect(() => {
+    // Listen for storage events (from other tabs/windows)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'doc-progress') {
+        loadProgressFromStorage()
+      }
+    }
+
+    // Listen for custom events (for same-page updates from ProgressTracker)
+    const handleCustomEvent = () => {
+      loadProgressFromStorage()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('doc-progress-updated', handleCustomEvent)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('doc-progress-updated', handleCustomEvent)
+    }
+  }, [loadProgressFromStorage])
+
   const toggleStep = (stepId: string) => {
+    const slug = STEP_TO_SLUG[stepId]
+    if (!slug) return
+
+    // Update local state
     setCompletedSteps((prev) => {
       const next = new Set(prev)
-      if (next.has(stepId)) {
+      const isCompleted = next.has(stepId)
+      if (isCompleted) {
         next.delete(stepId)
       } else {
         next.add(stepId)
       }
+
+      // Update localStorage to sync with ProgressTracker
+      const saved = localStorage.getItem('doc-progress')
+      let progress: DocProgress[] = []
+      if (saved) {
+        try {
+          progress = JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse progress:', e)
+        }
+      }
+
+      // Find or create the doc entry
+      let docIndex = progress.findIndex((d) => d.slug === slug)
+      if (docIndex === -1) {
+        // Create new entry
+        progress.push({
+          slug,
+          title: learningSteps.find((s) => s.id === stepId)?.title || slug,
+          completed: !isCompleted,
+          lastViewed: Date.now(),
+        })
+      } else {
+        // Update existing entry
+        progress[docIndex] = {
+          ...progress[docIndex],
+          completed: !isCompleted,
+          lastViewed: Date.now(),
+        }
+      }
+
+      localStorage.setItem('doc-progress', JSON.stringify(progress))
+      
+      // Dispatch custom event to notify ProgressTracker on same page
+      window.dispatchEvent(new Event('doc-progress-updated'))
+      
       return next
     })
   }

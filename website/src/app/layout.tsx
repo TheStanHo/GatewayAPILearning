@@ -6,6 +6,7 @@ import Sidebar from '@/components/navigation/Sidebar'
 import Header from '@/components/navigation/Header'
 import Breadcrumbs from '@/components/navigation/Breadcrumbs'
 import Footer from '@/components/navigation/Footer'
+import { ProgressTracker } from '@/components/progress/ProgressTracker'
 
 // Optimize font loading - reduce font weight variants
 const inter = Inter({ 
@@ -96,6 +97,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </div>
+        <ProgressTracker />
       </body>
     </html>
   )
