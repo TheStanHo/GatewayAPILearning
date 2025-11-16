@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { getVersionString } from '@/lib/version'
 
 export default function Footer() {
+  const versionString = getVersionString()
   return (
     <footer className="mt-auto border-t border-gray-200 bg-white">
       <div className="container mx-auto px-4 py-8 md:py-12">
@@ -62,7 +64,11 @@ export default function Footer() {
                 Official Docs
               </a>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row items-center gap-2">
+              <span className="text-xs text-gray-400 font-mono">
+                {versionString}
+              </span>
+              <span className="hidden md:inline text-gray-400">•</span>
               <span className="text-gray-500">Created by</span>
               <a
                 href="https://stanho.dev"

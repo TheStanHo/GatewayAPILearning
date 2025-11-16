@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build-with-version.js",
+    "build:simple": "next build",
     "start": "next start",
     "lint": "next lint",
     "validate": "node scripts/validate-content.js",
