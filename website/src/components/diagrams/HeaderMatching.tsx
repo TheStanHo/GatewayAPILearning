@@ -61,7 +61,7 @@ function HeaderMatching() {
                   <div className="flex-1">
                     <div className="font-semibold text-sm text-gray-900">No Match</div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Request doesn't match any rules
+                      Request doesn&apos;t match any rules
                     </div>
                   </div>
                 </div>
