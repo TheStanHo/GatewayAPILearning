@@ -18,7 +18,7 @@ export default async function ExamplesPage() {
         </div>
       ) : (
         <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-4">Code Examples</h1>
+          <h1 className="text-3xl font-bold mb-4">Code Examples</h1>
           <p className="text-xl text-gray-600 mb-8">
             Working YAML examples with side-by-side comparisons of Gateway API and Ingress.
           </p>
@@ -36,7 +36,7 @@ export default async function ExamplesPage() {
               <div className="p-2 bg-[#d1fae5] rounded-lg group-hover:bg-[#10b981] transition-colors">
                 <FileCode className="w-5 h-5 text-[#10b981] group-hover:text-white transition-colors" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {category.name
                   .split('-')
                   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

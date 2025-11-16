@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 import path from 'path'
 import remarkGfm from 'remark-gfm'
 import { CopyButton } from '@/components/code/CopyButton'
+import { Alert } from '@/components/content/Alert'
 
 // Components available in MDX
 const ArchitectureComparison = dynamic(
@@ -51,6 +52,7 @@ const createHeadingComponent = (level: number) => {
 
 const components = {
   ArchitectureComparison,
+  Alert,
   h2: createHeadingComponent(2),
   h3: createHeadingComponent(3),
   h4: createHeadingComponent(4),
@@ -143,7 +145,7 @@ export default async function DocPage({ params }: PageProps) {
           </div>
         ) : (
           <div className="mb-12">
-            <h1 className="text-4xl font-bold mb-8">Documentation</h1>
+            <h1 className="text-3xl font-bold mb-8">Documentation</h1>
             <p className="text-xl text-gray-600 mb-8">
               Comprehensive guides covering Gateway API concepts, from basics to advanced topics.
             </p>
@@ -209,7 +211,7 @@ export default async function DocPage({ params }: PageProps) {
                     <Icon className={`w-5 h-5 ${styles.text} group-hover:text-white transition-colors`} />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-semibold mb-2 text-gray-900">
+                    <h2 className="text-xl font-semibold mb-2 text-gray-900">
                       {doc.title}
                     </h2>
                     {doc.description && (
@@ -289,14 +291,14 @@ export default async function DocPage({ params }: PageProps) {
     <div className="max-w-4xl mx-auto">
       <article className="prose prose-lg max-w-none">
         <div className="mb-6 space-y-3">
-          <h1 className="text-3xl md:text-4xl font-bold">{title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
           {difficulty && (
             <DifficultyBadge level={difficulty} />
           )}
         </div>
         
         {headings.length > 0 && (
-          <div className="my-8">
+          <div className="my-4 md:my-6">
             <TableOfContents headings={headings} />
           </div>
         )}
@@ -321,7 +323,7 @@ export default async function DocPage({ params }: PageProps) {
         </div>
 
         <div className="mt-16 pt-10 border-t border-gray-200">
-          <h2 className="text-2xl font-semibold mb-6">Sources & References</h2>
+          <h2 className="text-xl font-semibold mb-6">Sources & References</h2>
           <div className="space-y-3">
             {sources.sources.map((source, index) => (
               <div key={index} className="flex items-start">

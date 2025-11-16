@@ -111,7 +111,7 @@ export default function LearnPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold mb-4">Interactive Learning Path</h1>
+      <h1 className="text-3xl font-bold mb-4">Interactive Learning Path</h1>
       <p className="text-xl text-gray-600 mb-8">
         Start with the basics. Master Gateway API step-by-step with clear explanations and hands-on examples.
       </p>
@@ -139,7 +139,7 @@ export default function LearnPage() {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900">📚 Basics - Start Here!</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">📚 Basics - Start Here!</h2>
         <p className="text-gray-600 mb-4">
           Master these three essential concepts first. This is all you need to get started with Gateway API.
         </p>
@@ -153,7 +153,7 @@ export default function LearnPage() {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900">🚀 Intermediate</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">🚀 Intermediate</h2>
         <p className="text-gray-600 mb-4">
           Once you&apos;ve mastered the basics, learn more advanced routing and traffic management.
         </p>
@@ -167,7 +167,7 @@ export default function LearnPage() {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900">⚙️ Advanced</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">⚙️ Advanced</h2>
         <p className="text-gray-600 mb-4">
           Advanced features for complex use cases. Only explore these after mastering the basics.
         </p>
@@ -181,7 +181,7 @@ export default function LearnPage() {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900">📖 Guides</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">📖 Guides</h2>
         <p className="text-gray-600 mb-4">
           Practical guides for real-world scenarios.
         </p>

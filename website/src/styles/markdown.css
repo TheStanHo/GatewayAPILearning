@@ -5,19 +5,19 @@
 }
 
 .markdown-content h1 {
-  @apply text-3xl md:text-4xl font-bold mt-8 md:mt-10 mb-4 md:mb-6;
+  @apply text-2xl md:text-3xl font-bold mt-8 md:mt-10 mb-4 md:mb-6;
 }
 
 .markdown-content h2 {
-  @apply text-2xl md:text-3xl font-semibold mt-6 md:mt-8 mb-3 md:mb-4 scroll-mt-24;
+  @apply text-xl md:text-2xl font-semibold mt-6 md:mt-8 mb-3 md:mb-4 scroll-mt-24;
 }
 
 .markdown-content h3 {
-  @apply text-xl md:text-2xl font-semibold mt-5 md:mt-6 mb-2 md:mb-3 scroll-mt-24;
+  @apply text-lg md:text-xl font-semibold mt-5 md:mt-6 mb-2 md:mb-3 scroll-mt-24;
 }
 
 .markdown-content h4 {
-  @apply text-lg md:text-xl font-semibold mt-4 md:mt-5 mb-2 scroll-mt-24;
+  @apply text-base md:text-lg font-semibold mt-4 md:mt-5 mb-2 scroll-mt-24;
 }
 
 .markdown-content p {

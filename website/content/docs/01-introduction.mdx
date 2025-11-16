@@ -8,17 +8,19 @@ Think of Gateway API as the evolution of Ingress Controllers - it solves many of
 
 ## Why Gateway API Exists
 
-### ⚠️ Important: Ingress NGINX Retirement
+Gateway API was created to solve fundamental limitations of the Ingress API that became apparent as Kubernetes networking evolved. It was designed as the next-generation standard to address issues that Ingress controllers (like Nginx Ingress) struggled with.
 
+<Alert type="important" title="Ingress NGINX Retirement - Migration Urgency">
 **Kubernetes SIG Network has announced the retirement of Ingress NGINX.** According to the [official announcement](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/):
 
 - **Best-effort maintenance** will continue until **March 2026**
 - After March 2026, there will be **no further releases, bugfixes, or security updates**
 - **SIG Network recommends migrating to Gateway API** or another Ingress controller immediately
 
-This retirement announcement underscores the importance of learning Gateway API now. Gateway API is not just an improvement over Ingress—it's the **recommended path forward** for Kubernetes networking.
+**This retirement announcement makes learning Gateway API more urgent than ever.** If you're using Ingress NGINX, you should plan your migration now. Gateway API was already the recommended path forward—this announcement makes it critical.
 
-> **Why is Ingress NGINX being retired?** The project has struggled with insufficient maintainership for years, with only one or two people doing development work in their spare time. Despite its popularity, the technical debt and security concerns (such as arbitrary NGINX configuration via annotations) have become insurmountable. Gateway API represents the modern, secure, and maintainable approach to Kubernetes networking.
+**Why is Ingress NGINX being retired?** The project has struggled with insufficient maintainership for years, with only one or two people doing development work in their spare time. Despite its popularity, the technical debt and security concerns (such as arbitrary NGINX configuration via annotations) have become insurmountable. Gateway API represents the modern, secure, and maintainable approach that addresses these exact concerns.
+</Alert>
 
 ### Limitations of Ingress Controllers (Nginx Ingress)
 

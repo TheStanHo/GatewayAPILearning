@@ -47,7 +47,7 @@ export default function ExampleCategoryPage({ params }: PageProps) {
         </Link>
       </div>
 
-      <h1 className="text-4xl font-bold mb-4">
+      <h1 className="text-3xl font-bold mb-4">
         {category.name
           .split('-')
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -67,7 +67,7 @@ export default function ExampleCategoryPage({ params }: PageProps) {
           
           return (
             <div key={file.name} id={fileId} className="bg-white rounded-lg shadow-md p-6 scroll-mt-24">
-              <h2 className="text-2xl font-semibold mb-4">{file.name}</h2>
+              <h2 className="text-xl font-semibold mb-4">{file.name}</h2>
               <CodeViewer
                 code={file.content}
                 language="yaml"
@@ -75,7 +75,7 @@ export default function ExampleCategoryPage({ params }: PageProps) {
               />
 
               <div className="mt-6 pt-6 border-t">
-                <h3 className="text-lg font-semibold mb-3">Sources & References</h3>
+                <h3 className="text-base font-semibold mb-3">Sources & References</h3>
                 <div className="space-y-2 text-sm">
                   {sources.sources.map((source, index) => (
                     <div key={index} className="flex items-start">

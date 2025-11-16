@@ -18,7 +18,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 md:py-16">
         <div className="text-center mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
             Learn Gateway API
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-4 md:mb-6 px-2">
@@ -49,7 +49,7 @@ export default function Home() {
               <div className="p-2 bg-[#dbeafe] rounded-lg group-hover:bg-[#3b82f6] transition-colors flex-shrink-0">
                 <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-[#3b82f6] group-hover:text-white transition-colors" />
               </div>
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Documentation</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Documentation</h2>
             </div>
             <p className="text-sm md:text-base text-gray-600 leading-relaxed">
               Comprehensive guides covering Gateway API concepts, from basics to advanced topics
@@ -64,7 +64,7 @@ export default function Home() {
               <div className="p-2 bg-[#d1fae5] rounded-lg group-hover:bg-[#10b981] transition-colors flex-shrink-0">
                 <FileCode className="w-5 h-5 md:w-6 md:h-6 text-[#10b981] group-hover:text-white transition-colors" />
               </div>
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Examples</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Examples</h2>
             </div>
             <p className="text-sm md:text-base text-gray-600 leading-relaxed">
               Working YAML examples with side-by-side comparisons of Gateway API and Ingress
@@ -79,7 +79,7 @@ export default function Home() {
               <div className="p-2 bg-[#ede9fe] rounded-lg group-hover:bg-[#8b5cf6] transition-colors flex-shrink-0">
                 <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-[#8b5cf6] group-hover:text-white transition-colors" />
               </div>
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Learn</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Learn</h2>
             </div>
             <p className="text-sm md:text-base text-gray-600 leading-relaxed">
               Interactive learning paths with step-by-step tutorials and progress tracking
