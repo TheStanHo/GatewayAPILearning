@@ -1,0 +1,20 @@
+# GatewayClass Example
+# GatewayClass defines a class of Gateways that share the same configuration
+# Similar to IngressClass in Nginx Ingress
+#
+# Related Documentation: Documentation/02-core-concepts.md
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+  # Description helps identify the purpose of this GatewayClass
+spec:
+  # controllerName identifies which controller should handle this GatewayClass
+  # Format: <domain>/<controller-name>
+  # For Nginx Gateway Fabric: gateway.nginx.org/nginx-gateway
+  # For Istio: istio.io/gateway-controller
+  # For Contour: projectcontour.io/contour
+  controllerName: gateway.nginx.org/nginx-gateway
+  description: "Nginx Gateway API implementation"
+

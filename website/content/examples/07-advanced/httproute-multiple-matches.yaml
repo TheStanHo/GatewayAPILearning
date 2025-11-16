@@ -1,0 +1,83 @@
+# Complex Matching Logic Example
+# Shows how to combine path, headers, query params, and methods
+# Demonstrates AND logic (within match) and OR logic (multiple matches)
+#
+# Related Documentation: Documentation/04-advanced-routing.md
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: complex-match-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Rule 1: Complex AND logic - all conditions must match
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+          headers:
+            - name: X-Environment
+              value: staging
+          method: POST
+          queryParams:
+            - name: version
+              value: v2
+        # All of the above must be true (AND)
+      backendRefs:
+        - name: staging-v2-write-service
+          port: 80
+    
+    # Rule 2: OR logic - multiple match blocks
+    - matches:
+        # Match block 1: Staging environment
+        - path:
+            type: PathPrefix
+            value: /api
+          headers:
+            - name: X-Environment
+              value: staging
+        # Match block 2: Development environment
+        - path:
+            type: PathPrefix
+            value: /api
+          headers:
+            - name: X-Environment
+              value: development
+        # Either match block can match (OR)
+      backendRefs:
+        - name: non-prod-api-service
+          port: 80
+    
+    # Rule 3: Premium users with specific path
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /premium
+          headers:
+            - name: X-User-Type
+              value: premium
+            - name: X-Auth-Token
+              type: RegularExpression
+              value: "^token-.*"
+      backendRefs:
+        - name: premium-service
+          port: 80
+    
+    # Rule 4: Default route
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: default-service
+          port: 80
+
+# Key Concepts:
+# - Within a single match block: AND logic (all conditions must match)
+# - Multiple match blocks: OR logic (any match block can match)
+# - Combine path, headers, query params, methods for complex routing
+

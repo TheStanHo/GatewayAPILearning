@@ -1,0 +1,584 @@
+# Traffic Splitting: Weighted Routing and Canary Deployments
+
+Traffic splitting is a powerful feature for gradual rollouts, A/B testing, and canary deployments. Gateway API provides native support for weighted routing, making it much easier than Nginx Ingress.
+
+## Weighted Routing
+
+Weighted routing allows you to split traffic between multiple backend services based on percentages.
+
+### Nginx Ingress - Canary Annotations
+
+Nginx Ingress requires annotations for canary deployments:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: canary-service
+                port:
+                  number: 80
+```
+
+You need **two separate Ingress resources** - one for stable and one for canary!
+
+### Gateway API - Native Weighted Routing
+
+Gateway API has native weighted routing in a single HTTPRoute:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: weighted-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-service
+          port: 80
+          weight: 90
+        - name: canary-service
+          port: 80
+          weight: 10
+```
+
+**Single resource, native support!**
+
+## How Weights Work
+
+Weights are relative percentages. The Gateway API implementation calculates the actual percentage based on the total weight.
+
+### Example: 90/10 Split
+
+```yaml
+backendRefs:
+  - name: stable-service
+    port: 80
+    weight: 90
+  - name: canary-service
+    port: 80
+    weight: 10
+```
+
+- Stable service gets: 90 / (90 + 10) = 90% of traffic
+- Canary service gets: 10 / (90 + 10) = 10% of traffic
+
+### Example: 50/50 Split
+
+```yaml
+backendRefs:
+  - name: service-a
+    port: 80
+    weight: 50
+  - name: service-b
+    port: 80
+    weight: 50
+```
+
+Both services get 50% of traffic.
+
+### Example: Three Services
+
+```yaml
+backendRefs:
+  - name: service-a
+    port: 80
+    weight: 60
+  - name: service-b
+    port: 80
+    weight: 30
+  - name: service-c
+    port: 80
+    weight: 10
+```
+
+- Service A: 60%
+- Service B: 30%
+- Service C: 10%
+
+## Canary Deployments
+
+Canary deployments gradually roll out new versions to a small percentage of users.
+
+### Nginx Ingress Canary Pattern
+
+You need two Ingress resources:
+
+**Stable Ingress:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stable-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stable-service
+                port:
+                  number: 80
+```
+
+**Canary Ingress:**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: canary-service
+                port:
+                  number: 80
+```
+
+### Gateway API Canary Pattern
+
+Single HTTPRoute with weights:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: canary-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-service
+          port: 80
+          weight: 90
+        - name: canary-service
+          port: 80
+          weight: 10
+```
+
+## Progressive Canary Rollout
+
+With Gateway API, you can easily adjust weights for progressive rollouts:
+
+### Phase 1: 5% Canary
+```yaml
+backendRefs:
+  - name: stable-service
+    port: 80
+    weight: 95
+  - name: canary-service
+    port: 80
+    weight: 5
+```
+
+### Phase 2: 25% Canary
+```yaml
+backendRefs:
+  - name: stable-service
+    port: 80
+    weight: 75
+  - name: canary-service
+    port: 80
+    weight: 25
+```
+
+### Phase 3: 50% Canary
+```yaml
+backendRefs:
+  - name: stable-service
+    port: 80
+    weight: 50
+  - name: canary-service
+    port: 80
+    weight: 50
+```
+
+### Phase 4: 100% Canary (Complete Rollout)
+```yaml
+backendRefs:
+  - name: canary-service
+    port: 80
+    weight: 100
+```
+
+## A/B Testing
+
+Weighted routing is perfect for A/B testing different versions of your application.
+
+### Example: UI A/B Test
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ab-test-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ui-version-a
+          port: 80
+          weight: 50
+        - name: ui-version-b
+          port: 80
+          weight: 50
+```
+
+## Traffic Mirroring
+
+Traffic mirroring sends a copy of traffic to a secondary service without affecting the primary response. This is useful for testing new services with production traffic.
+
+### Nginx Ingress - Traffic Mirroring
+
+Requires annotations:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mirror-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/mirror-target: "https://mirror.example.com"
+    nginx.ingress.kubernetes.io/mirror-request-body: "always"
+```
+
+### Gateway API - Request Mirror Filter
+
+Native support via filters:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mirror-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestMirror
+          requestMirror:
+            backendRef:
+              name: mirror-service
+              port: 80
+      backendRefs:
+        - name: primary-service
+          port: 80
+```
+
+**Note:** The primary service still handles the request and responds. The mirror service receives a copy asynchronously.
+
+## Combining Traffic Splitting with Other Features
+
+### Weighted Routing + Header Matching
+
+Route canary traffic based on headers:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: header-weighted-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # Force canary for specific users
+    - matches:
+        - headers:
+            - name: X-Canary-User
+              value: "true"
+      backendRefs:
+        - name: canary-service
+          port: 80
+          weight: 100
+    # Weighted routing for everyone else
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-service
+          port: 80
+          weight: 90
+        - name: canary-service
+          port: 80
+          weight: 10
+```
+
+### Weighted Routing + Path Matching
+
+Different weights for different paths:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: path-weighted-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    # API endpoints - 20% canary
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: api-stable
+          port: 80
+          weight: 80
+        - name: api-canary
+          port: 80
+          weight: 20
+    # Web endpoints - 10% canary
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: web-stable
+          port: 80
+          weight: 90
+        - name: web-canary
+          port: 80
+          weight: 10
+```
+
+## Complete Examples
+
+### Example 1: Simple Canary Deployment
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: canary-deployment
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - app.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: stable-app
+          port: 80
+          weight: 90
+        - name: canary-app
+          port: 80
+          weight: 10
+```
+
+### Example 2: Multi-Version Rollout
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: multi-version-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: v1-service
+          port: 80
+          weight: 60
+        - name: v2-service
+          port: 80
+          weight: 30
+        - name: v3-service
+          port: 80
+          weight: 10
+```
+
+### Example 3: Blue-Green with Weights
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: blue-green-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: blue-service
+          port: 80
+          weight: 100
+        - name: green-service
+          port: 80
+          weight: 0  # Gradually increase to 100
+```
+
+## Comparison Table
+
+| Feature | Nginx Ingress | Gateway API |
+|---------|--------------|-------------|
+| Weighted Routing | Canary annotations | Native `weight` field |
+| Multiple Backends | Two Ingress resources | Single HTTPRoute |
+| Traffic Mirroring | Annotations | Native `RequestMirror` filter |
+| A/B Testing | Complex setup | Simple weights |
+| Progressive Rollout | Manual annotation updates | Update weights in HTTPRoute |
+
+## Best Practices
+
+1. **Start Small**: Begin with 5-10% canary traffic
+2. **Monitor Closely**: Watch metrics during canary rollouts
+3. **Gradual Increase**: Increase canary percentage gradually (5% → 25% → 50% → 100%)
+4. **Quick Rollback**: Keep stable service ready for quick rollback
+5. **Use Headers for Testing**: Combine with header matching for internal testing
+6. **Document Weights**: Keep track of weight changes for audit purposes
+
+## Common Patterns
+
+### Pattern 1: Gradual Canary Rollout
+
+```yaml
+# Day 1: 5%
+weight: 5
+
+# Day 2: 10%
+weight: 10
+
+# Day 3: 25%
+weight: 25
+
+# Day 4: 50%
+weight: 50
+
+# Day 5: 100%
+weight: 100
+```
+
+### Pattern 2: Feature Flag Canary
+
+```yaml
+rules:
+  # Force canary for feature flag
+  - matches:
+      - headers:
+          - name: X-Feature-NewAPI
+            value: "true"
+      backendRefs:
+        - name: new-api-service
+          port: 80
+          weight: 100
+    # Gradual rollout for others
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: old-api-service
+          port: 80
+          weight: 90
+        - name: new-api-service
+          port: 80
+          weight: 10
+```
+
+## Troubleshooting
+
+### Weights Not Working?
+
+1. Verify all backendRefs have valid weights
+2. Check that backend services are healthy
+3. Ensure weights sum to a reasonable total (not required, but recommended)
+4. Check Gateway status for route acceptance
+
+### Canary Traffic Too High/Low?
+
+1. Verify weight calculations (weight / total weight)
+2. Check for other HTTPRoutes affecting the same hostname
+3. Ensure no header-based routing is interfering
+
+## Next Steps
+
+Now that you understand traffic splitting, let's learn about TLS/SSL configuration:
+
+👉 **[Next: TLS/SSL Configuration →](/docs/06-tls-ssl)**
+
+## Related Examples
+
+- [httproute-weighted.yaml](/examples/04-traffic-splitting/#httproute-weighted) - Weighted routing
+- [httproute-canary.yaml](/examples/04-traffic-splitting/#httproute-canary) - Canary deployment
+- [httproute-mirror.yaml](/examples/04-traffic-splitting/#httproute-mirror) - Traffic mirroring
+- [ingress-canary-equivalent.yaml](/examples/04-traffic-splitting/#ingress-canary-equivalent) - Nginx Ingress equivalent
+

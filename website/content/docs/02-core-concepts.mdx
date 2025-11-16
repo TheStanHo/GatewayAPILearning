@@ -16,7 +16,7 @@ Before working with Gateway API resources, you need:
    helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway
    ```
 
-   For detailed setup instructions, see the [Setup Guide](../setup/README.md).
+   For detailed setup instructions, see the NGINX Gateway Fabric installation guide in the [NGINX Gateway Fabric Documentation](https://docs.nginx.com/nginx-gateway-fabric/installation/).
 
 3. **Verify Installation**:
    ```powershell
@@ -210,13 +210,13 @@ spec:
 
 ### Key Differences
 
-| Feature | Ingress | HTTPRoute |
-|---------|---------|-----------|
-| Parent Reference | `ingressClassName` | `parentRefs` (explicit Gateway) |
-| Hostnames | `rules[].host` | `hostnames` (top-level) |
-| Path Matching | `paths[].path` | `matches[].path` |
-| Backend | `backend.service` | `backendRefs` |
-| Advanced Features | Annotations | Native filters |
+| Feature           | Ingress                    | HTTPRoute                        |
+| :---------------- | :------------------------- | :------------------------------- |
+| Parent Reference  | `ingressClassName`         | `parentRefs` (explicit Gateway)  |
+| Hostnames         | `rules[].host`             | `hostnames` (top-level)          |
+| Path Matching     | `paths[].path`              | `matches[].path`                 |
+| Backend           | `backend.service`          | `backendRefs`                    |
+| Advanced Features | Annotations                | Native filters                   |
 
 ### HTTPRoute Structure
 
@@ -419,12 +419,12 @@ spec:
 
 Now that you understand the core concepts, let's learn about basic routing:
 
-👉 **[Next: Basic Routing →](./03-basic-routing.md)**
+👉 **[Next: Basic Routing →](/docs/03-basic-routing)**
 
 ## Related Examples
 
-- `../Examples/01-basic-setup/gatewayclass.yaml` - GatewayClass example
-- `../Examples/01-basic-setup/gateway.yaml` - Gateway example
-- `../Examples/01-basic-setup/httproute-basic.yaml` - Basic HTTPRoute
-- `../Examples/01-basic-setup/ingress-equivalent.yaml` - Nginx Ingress equivalent
+- [gatewayclass.yaml](/examples/01-basic-setup/#gatewayclass) - GatewayClass example
+- [gateway.yaml](/examples/01-basic-setup/#gateway) - Gateway example
+- [httproute-basic.yaml](/examples/01-basic-setup/#httproute-basic) - Basic HTTPRoute
+- [ingress-equivalent.yaml](/examples/01-basic-setup/#ingress-equivalent) - Nginx Ingress equivalent
 

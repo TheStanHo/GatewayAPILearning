@@ -1,0 +1,55 @@
+import Link from 'next/link'
+import { MDXRemote } from 'next-mdx-remote/rsc'
+import { getExampleCategories } from '@/lib/examples'
+import { getContentBySlug } from '@/lib/mdx'
+import { FileCode } from 'lucide-react'
+
+const components = {}
+
+export default async function ExamplesPage() {
+  const categories = getExampleCategories()
+  const content = await getContentBySlug('examples')
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      {content && content.content ? (
+        <div className="prose prose-lg max-w-none mb-12">
+          <MDXRemote source={content.content} components={components} />
+        </div>
+      ) : (
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold mb-4">Code Examples</h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Working YAML examples with side-by-side comparisons of Gateway API and Ingress.
+          </p>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((category) => (
+          <Link
+            key={category.name}
+            href={`/examples/${category.name}`}
+            className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-all border-l-4 border-[#10b981] hover:border-[#047857] group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-[#d1fae5] rounded-lg group-hover:bg-[#10b981] transition-colors">
+                <FileCode className="w-5 h-5 text-[#10b981] group-hover:text-white transition-colors" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {category.name
+                  .split('-')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')}
+              </h2>
+            </div>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              {category.files.length} example{category.files.length !== 1 ? 's' : ''}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+

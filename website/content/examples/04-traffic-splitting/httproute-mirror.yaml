@@ -1,0 +1,41 @@
+# Traffic Mirroring Example
+# Sends a copy of traffic to a secondary service
+# Primary service still handles the request and responds
+# Mirror service receives copy asynchronously
+#
+# Related Documentation: Documentation/05-traffic-splitting.md
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mirror-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        # RequestMirror filter sends copy to mirror service
+        - type: RequestMirror
+          requestMirror:
+            backendRef:
+              name: mirror-service
+              port: 80
+      # Primary service handles the actual request
+      backendRefs:
+        - name: primary-service
+          port: 80
+
+# Use Cases:
+# - Testing new services with production traffic
+# - Analytics and monitoring
+# - A/B testing data collection
+# - Debugging production issues
+
+# Note: Mirror service receives copy but doesn't affect primary response
+

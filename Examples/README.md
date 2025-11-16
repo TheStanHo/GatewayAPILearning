@@ -90,9 +90,46 @@ Migration examples showing before/after comparisons.
 
 ## Prerequisites
 
-- Kubernetes cluster with Gateway API installed
-- Gateway API implementation (e.g., Nginx Gateway Fabric, Istio, Contour)
-- `kubectl` configured to access your cluster
+**⚠️ IMPORTANT: Install Gateway API CRDs First!**
+
+Before using any of these examples, you **must** install the Gateway API Custom Resource Definitions (CRDs) in your Kubernetes cluster. Gateway API resources are not part of standard Kubernetes.
+
+### 1. Install Gateway API CRDs
+
+```powershell
+# Option 1: From NGINX Gateway Fabric (recommended if using NGINX)
+kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.2.1" | kubectl apply -f -
+
+# Option 2: From Official Gateway API Repository
+kubectl kustomize "https://github.com/kubernetes-sigs/gateway-api/releases/download/v2.2.1/standard-install.yaml" | kubectl apply -f -
+```
+
+### 2. Verify CRDs are Installed
+
+```powershell
+kubectl get crd | Select-String gateway
+```
+
+You should see CRDs like `gatewayclasses.gateway.networking.k8s.io`, `gateways.gateway.networking.k8s.io`, and `httproutes.gateway.networking.k8s.io`.
+
+### 3. Install a Gateway API Implementation
+
+Choose and install a Gateway API implementation:
+
+- **NGINX Gateway Fabric** (recommended for this guide):
+  ```powershell
+  helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway
+  ```
+
+- **Other options:** Istio, Contour, Kong, Traefik (see their respective documentation)
+
+### Additional Requirements
+
+- Kubernetes cluster (minikube, kind, or cloud cluster)
+- `kubectl` installed and configured
+- `helm` 3.0+ (for NGINX Gateway Fabric installation)
+
+For detailed setup instructions, see the [Setup Guide](../setup/README.md).
 
 ## Applying Examples
 

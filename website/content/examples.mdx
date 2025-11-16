@@ -1,0 +1,72 @@
+# Gateway API Examples
+
+This page contains working YAML examples for Gateway API, organized by topic. Each example includes comments and references to the corresponding documentation.
+
+## Example Categories
+
+Browse examples by category below. Each category contains working YAML files that you can apply directly to your Kubernetes cluster.
+
+The examples are organized by topic, from basic setup to advanced routing patterns. Each example includes:
+- ✅ Working YAML configuration
+- ✅ Comments explaining key fields  
+- ✅ References to related documentation
+- ✅ Nginx Ingress equivalents for comparison
+
+## How to Use These Examples
+
+1. **Read the Documentation First**: Each example folder references documentation that explains the concepts
+2. **Review the YAML**: Each file includes comments explaining key fields
+3. **Compare with Ingress**: Many examples include Nginx Ingress equivalents
+4. **Adapt to Your Needs**: Modify examples to match your use case
+5. **Test in Your Cluster**: Apply examples to your Kubernetes cluster (with Gateway API installed)
+
+## ⚠️ Prerequisites
+
+**IMPORTANT: Install Gateway API CRDs First!**
+
+Before using any of these examples, you **must** install the Gateway API Custom Resource Definitions (CRDs) in your Kubernetes cluster. Gateway API resources are not part of standard Kubernetes.
+
+### 1. Install Gateway API CRDs
+
+```powershell
+# Option 1: From NGINX Gateway Fabric (recommended if using NGINX)
+kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.2.1" | kubectl apply -f -
+
+# Option 2: From Official Gateway API Repository
+kubectl kustomize "https://github.com/kubernetes-sigs/gateway-api/releases/download/v2.2.1/standard-install.yaml" | kubectl apply -f -
+```
+
+### 2. Verify CRDs are Installed
+
+```powershell
+kubectl get crd | Select-String gateway
+```
+
+You should see CRDs like `gatewayclasses.gateway.networking.k8s.io`, `gateways.gateway.networking.k8s.io`, and `httproutes.gateway.networking.k8s.io`.
+
+### 3. Install a Gateway API Implementation
+
+Choose and install a Gateway API implementation:
+
+- **NGINX Gateway Fabric** (recommended for this guide):
+  ```powershell
+  helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway
+  ```
+
+- **Other options:** Istio, Contour, Kong, Traefik (see their respective documentation)
+
+### Additional Requirements
+
+- Kubernetes cluster (minikube, kind, or cloud cluster)
+- `kubectl` installed and configured
+- `helm` 3.0+ (for NGINX Gateway Fabric installation)
+
+For detailed setup instructions, see the [NGINX Gateway Fabric Installation Guide](https://docs.nginx.com/nginx-gateway-fabric/installation/) or the [Core Concepts documentation](/docs/02-core-concepts) which includes setup prerequisites.
+
+## Notes
+
+- Examples use `nginx-gateway` as the GatewayClass name - adjust for your implementation
+- TLS examples require valid certificates (create Secrets first)
+- Some examples are implementation-specific - check your Gateway provider's documentation
+- Examples are for learning purposes - adapt security and configuration for production use
+

@@ -1,0 +1,60 @@
+# Gateway with TLS Configuration
+# TLS is configured at the Gateway level, not HTTPRoute
+# This provides centralized certificate management
+#
+# Related Documentation: Documentation/06-tls-ssl.md
+# Prerequisites: TLS Secret must exist (create with cert-manager or manually)
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tls-gateway
+  namespace: default
+spec:
+  gatewayClassName: nginx-gateway
+  listeners:
+    # HTTP listener (optional - for redirects)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    
+    # HTTPS listener with TLS termination
+    - name: https
+      protocol: HTTPS
+      port: 443
+      # TLS configuration
+      tls:
+        # Terminate TLS at Gateway (most common)
+        mode: Terminate
+        # Reference to TLS certificate Secret
+        certificateRefs:
+          - name: example-tls
+            kind: Secret
+            # group: ""  # Optional: default is core API group
+      # Optional: restrict to specific hostname
+      # hostname: example.com
+      allowedRoutes:
+        namespaces:
+          from: All
+
+# To create TLS Secret manually:
+# kubectl create secret tls example-tls \
+#   --cert=path/to/cert.crt \
+#   --key=path/to/cert.key
+
+# Or use cert-manager:
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: example-cert
+# spec:
+#   secretName: example-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - example.com
+

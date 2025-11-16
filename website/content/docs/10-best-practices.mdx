@@ -1,0 +1,413 @@
+# Best Practices for Gateway API
+
+This guide covers best practices for using Gateway API effectively, including namespace organization, security, performance, and monitoring.
+
+## Namespace Organization
+
+### Separate Infrastructure from Application
+
+Use Gateway API's role-oriented model:
+
+**Infrastructure Team:**
+- Manages `GatewayClass` and `Gateway` resources
+- Controls ports, TLS, and infrastructure concerns
+- Typically in `gateway-system` or `infrastructure` namespace
+
+**Application Team:**
+- Manages `HTTPRoute` resources
+- Controls routing rules and backend references
+- In application namespaces
+
+### Example Structure
+
+```
+gateway-system/
+  ├── GatewayClass (nginx-gateway)
+  └── Gateway (my-gateway)
+
+production/
+  ├── HTTPRoute (app-route)
+  └── Services
+
+staging/
+  ├── HTTPRoute (app-route)
+  └── Services
+```
+
+## Gateway vs HTTPRoute Ownership
+
+### Gateway Ownership
+
+- **Who:** Infrastructure/Operations team
+- **What:** Network endpoints, TLS certificates, listener configuration
+- **Where:** Infrastructure namespace (e.g., `gateway-system`)
+- **RBAC:** Restricted access, only infrastructure team can modify
+
+### HTTPRoute Ownership
+
+- **Who:** Application developers
+- **What:** Routing rules, hostnames, paths, backend references
+- **Where:** Application namespaces
+- **RBAC:** Application team can create/modify HTTPRoutes in their namespace
+
+### Benefits
+
+1. **Clear Separation**: Infrastructure and app teams don't conflict
+2. **RBAC**: Different permissions for different roles
+3. **Scalability**: App teams can create routes independently
+4. **Portability**: Routes work with any Gateway
+
+## Security Considerations
+
+### 1. Namespace Isolation
+
+Control which namespaces can attach routes to Gateways:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+spec:
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: "true"
+```
+
+### 2. TLS Configuration
+
+- Use TLS termination at Gateway level
+- Rotate certificates regularly
+- Use cert-manager for automatic certificate management
+- Prefer wildcard certificates when possible
+
+### 3. Rate Limiting
+
+Apply rate limiting policies to prevent abuse:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: RateLimitPolicy
+metadata:
+  name: api-rate-limit
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: api-route
+  default:
+    requests: 100
+    unit: "second"
+```
+
+### 4. Network Policies
+
+Use Kubernetes NetworkPolicies to restrict traffic:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+```
+
+## Performance Optimization
+
+### 1. Connection Pooling
+
+Configure connection pooling at Gateway level (implementation-specific).
+
+### 2. Timeout Configuration
+
+Set appropriate timeouts:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: TimeoutPolicy
+metadata:
+  name: api-timeout
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: api-route
+  request: "30s"
+  response: "60s"
+```
+
+### 3. Retry Configuration
+
+Configure retries for transient failures:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: RetryPolicy
+metadata:
+  name: api-retry
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: api-route
+  default:
+    maxRetries: 3
+    retryOn:
+      - "5xx"
+      - "gateway-error"
+```
+
+### 4. Backend Health Checks
+
+Ensure backend services have health checks configured.
+
+## Monitoring and Observability
+
+### 1. Gateway Status
+
+Monitor Gateway status:
+
+```bash
+kubectl get gateway my-gateway -o yaml
+```
+
+Check:
+- Listener status
+- Address assignments
+- Conditions
+
+### 2. HTTPRoute Status
+
+Monitor HTTPRoute status:
+
+```bash
+kubectl get httproute my-route -o yaml
+```
+
+Check:
+- Parent status (attached to Gateway)
+- Backend status
+- Conditions
+
+### 3. Metrics
+
+Monitor Gateway API metrics (implementation-specific):
+
+- Request rate
+- Error rate
+- Latency
+- Backend health
+
+### 4. Logging
+
+Enable logging for:
+- Gateway configuration changes
+- HTTPRoute changes
+- Policy attachments
+- Traffic patterns
+
+## Resource Naming
+
+### Gateway Naming
+
+Use descriptive names:
+
+```yaml
+# Good
+name: production-gateway
+name: api-gateway
+name: public-gateway
+
+# Bad
+name: gw
+name: gateway-1
+name: test
+```
+
+### HTTPRoute Naming
+
+Use service/application names:
+
+```yaml
+# Good
+name: api-route
+name: frontend-route
+name: admin-route
+
+# Bad
+name: route
+name: httproute-1
+name: test-route
+```
+
+## Version Management
+
+### API Version Awareness
+
+Gateway API is evolving. Be aware of:
+
+- **v1alpha2**: Early experimental
+- **v1beta1**: Stable beta
+- **v1**: Production stable
+
+Use stable versions (v1beta1 or v1) for production.
+
+### Implementation Compatibility
+
+Check your Gateway implementation's supported versions:
+
+- Nginx Gateway Fabric
+- Istio
+- Contour
+- Kong
+- Traefik
+
+## Common Patterns
+
+### Pattern 1: Multi-Environment Setup
+
+```yaml
+# Production Gateway
+Gateway: production-gateway
+  ├── HTTPRoute: prod-api-route
+  └── HTTPRoute: prod-web-route
+
+# Staging Gateway
+Gateway: staging-gateway
+  ├── HTTPRoute: staging-api-route
+  └── HTTPRoute: staging-web-route
+```
+
+### Pattern 2: API Versioning
+
+```yaml
+HTTPRoute: api-route
+  ├── Rule: /api/v1 → v1-service
+  ├── Rule: /api/v2 → v2-service
+  └── Rule: /api/v3 → v3-service
+```
+
+### Pattern 3: Canary Rollout
+
+```yaml
+HTTPRoute: canary-route
+  └── Rule: /
+      ├── Backend: stable-service (weight: 90)
+      └── Backend: canary-service (weight: 10)
+```
+
+## Documentation
+
+### Document Gateway Configuration
+
+Document:
+- Gateway purpose
+- Listener configuration
+- TLS certificates
+- Namespace access policies
+
+### Document HTTPRoute Configuration
+
+Document:
+- Routing rules
+- Backend services
+- Filters applied
+- Policies attached
+
+## Testing
+
+### Test Before Production
+
+1. **Unit Tests**: Test YAML syntax
+2. **Integration Tests**: Test with actual Gateway
+3. **Load Tests**: Test under load
+4. **Failure Tests**: Test failure scenarios
+
+### Test Scenarios
+
+- Basic routing
+- TLS termination
+- Path rewriting
+- Traffic splitting
+- Policy application
+
+## Troubleshooting
+
+### Common Issues
+
+1. **HTTPRoute Not Attaching**
+   - Check Gateway `allowedRoutes`
+   - Verify namespace permissions
+   - Check Gateway status
+
+2. **TLS Not Working**
+   - Verify certificate Secret
+   - Check certificateRef
+   - Verify hostname match
+
+3. **Traffic Not Routing**
+   - Check HTTPRoute status
+   - Verify backend services
+   - Check Gateway status
+
+### Debugging Commands
+
+```bash
+# Check Gateway status
+kubectl describe gateway my-gateway
+
+# Check HTTPRoute status
+kubectl describe httproute my-route
+
+# Check GatewayClass
+kubectl get gatewayclass
+
+# Check events
+kubectl get events --sort-by='.lastTimestamp'
+```
+
+## Summary
+
+Best practices for Gateway API:
+
+1. **Separate Concerns**: Infrastructure (Gateway) vs Application (HTTPRoute)
+2. **Namespace Isolation**: Control route access with `allowedRoutes`
+3. **Security**: TLS, rate limiting, network policies
+4. **Performance**: Timeouts, retries, connection pooling
+5. **Monitoring**: Status, metrics, logging
+6. **Documentation**: Document configuration and decisions
+7. **Testing**: Test thoroughly before production
+8. **Version Awareness**: Use stable API versions
+
+## Related Documentation
+
+- [Core Concepts](./02-core-concepts.md) - Understanding Gateway API resources
+- [Migration Guide](./09-migration-guide.md) - Migrating from Ingress
+- [Policies](./08-policies.md) - Advanced policy configuration
+
+## Related Examples
+
+- See [Examples](/examples/) for working examples
+- Check Gateway implementation documentation for specific patterns
+

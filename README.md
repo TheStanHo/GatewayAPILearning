@@ -174,7 +174,15 @@ This is a learning project. Feel free to:
 
 ## 📄 License
 
-This project is for educational purposes. Examples and documentation are provided as-is.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+### Content Attribution
+
+This project is an educational resource that references:
+- **Gateway API Official Documentation** (Apache License 2.0) - https://gateway-api.sigs.k8s.io/
+- **NGINX Gateway Fabric Documentation** - https://docs.nginx.com/nginx-gateway-fabric/
+
+All content is original educational material, properly attributed, and created for educational purposes. See [ATTRIBUTION.md](./website/ATTRIBUTION.md) for full details.
 
 ## 🎯 Next Steps
 

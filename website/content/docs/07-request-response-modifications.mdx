@@ -1,0 +1,667 @@
+# Request/Response Modifications: Filters and Rewrites
+
+Gateway API provides powerful filters for modifying requests and responses. This guide covers URL rewriting, header modifications, and redirects, comparing them to Nginx Ingress equivalents.
+
+## URL Rewriting
+
+URL rewriting allows you to modify the request path before forwarding to the backend.
+
+### Nginx Ingress - Rewrite Target
+
+Nginx Ingress uses annotations for URL rewriting:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rewrite-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+```
+
+This rewrites `/api/*` to `/*` before forwarding.
+
+### Gateway API - URLRewrite Filter
+
+Gateway API uses native filters:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rewrite-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+## URLRewrite Filter Types
+
+### 1. ReplacePrefixMatch
+
+Replaces the matched path prefix:
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplacePrefixMatch
+        replacePrefixMatch: /v2
+```
+
+**Example:**
+- Request: `/api/users`
+- Matched: `/api` (prefix)
+- Rewritten: `/v2/users`
+- Forwarded to backend: `/v2/users`
+
+### 2. ReplaceFullPath
+
+Replaces the entire path:
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplaceFullPath
+        replaceFullPath: /new-path
+```
+
+**Example:**
+- Request: `/api/v1/users/123`
+- Rewritten: `/new-path`
+- Forwarded to backend: `/new-path`
+
+### 3. ReplacePathMatch
+
+Replaces a matched path segment:
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplacePathMatch
+        replacePathMatch: /old
+        replaceWith: /new
+```
+
+## Common Rewrite Patterns
+
+### Pattern 1: Strip Prefix
+
+Remove a path prefix before forwarding:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: strip-prefix-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+**Example:**
+- Request: `/api/v1/users`
+- Rewritten: `/v1/users`
+- Backend receives: `/v1/users`
+
+### Pattern 2: Add Prefix
+
+Add a path prefix:
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplaceFullPath
+        replaceFullPath: /api/v2
+```
+
+**Example:**
+- Request: `/users`
+- Rewritten: `/api/v2`
+- Backend receives: `/api/v2`
+
+### Pattern 3: Path Transformation
+
+Transform path structure:
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplacePrefixMatch
+        replacePrefixMatch: /old-api
+```
+
+**Example:**
+- Request: `/old-api/users`
+- Rewritten: `/users`
+- Backend receives: `/users`
+
+## Request Header Modification
+
+Modify request headers before forwarding to the backend.
+
+### Nginx Ingress - Request Headers
+
+Nginx Ingress uses annotations:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: header-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Custom-Header: value";
+```
+
+### Gateway API - RequestHeaderModifier Filter
+
+Gateway API uses native filters:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: header-modify-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-Custom-Header
+                value: custom-value
+            set:
+              - name: X-User-ID
+                value: "12345"
+            remove:
+              - X-Old-Header
+      backendRefs:
+        - name: my-service
+          port: 80
+```
+
+### RequestHeaderModifier Operations
+
+#### Add Headers
+
+Add new headers (doesn't overwrite existing):
+
+```yaml
+filters:
+  - type: RequestHeaderModifier
+    requestHeaderModifier:
+      add:
+        - name: X-Forwarded-For
+          value: 192.168.1.1
+        - name: X-Environment
+          value: production
+```
+
+#### Set Headers
+
+Set header values (overwrites existing):
+
+```yaml
+filters:
+  - type: RequestHeaderModifier
+    requestHeaderModifier:
+      set:
+        - name: X-User-ID
+          value: "12345"
+        - name: Authorization
+          value: "Bearer token123"
+```
+
+#### Remove Headers
+
+Remove headers:
+
+```yaml
+filters:
+  - type: RequestHeaderModifier
+    requestHeaderModifier:
+      remove:
+        - X-Sensitive-Header
+        - X-Old-Header
+```
+
+## Response Header Modification
+
+Modify response headers before sending to the client.
+
+### Gateway API - ResponseHeaderModifier Filter
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: response-header-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: X-Response-Time
+                value: "100ms"
+            set:
+              - name: Cache-Control
+                value: "no-cache"
+            remove:
+              - X-Internal-Header
+      backendRefs:
+        - name: my-service
+          port: 80
+```
+
+### ResponseHeaderModifier Operations
+
+Same operations as RequestHeaderModifier:
+- **add**: Add new response headers
+- **set**: Set/overwrite response headers
+- **remove**: Remove response headers
+
+## Redirects
+
+Redirect requests to a different URL.
+
+### Nginx Ingress - Redirects
+
+Nginx Ingress uses annotations:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redirect-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://new.example.com"
+```
+
+### Gateway API - RequestRedirect Filter
+
+Gateway API uses native redirect filters:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: redirect-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - old.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: new.example.com
+            statusCode: 301
+      backendRefs: []  # No backend needed for redirect
+```
+
+### Redirect Options
+
+#### Permanent Redirect (301)
+
+```yaml
+filters:
+  - type: RequestRedirect
+    requestRedirect:
+      statusCode: 301
+      hostname: new.example.com
+```
+
+#### Temporary Redirect (302)
+
+```yaml
+filters:
+  - type: RequestRedirect
+    requestRedirect:
+      statusCode: 302
+      hostname: new.example.com
+```
+
+#### Path-Specific Redirect
+
+```yaml
+filters:
+  - type: RequestRedirect
+    requestRedirect:
+      path:
+        type: ReplaceFullPath
+        replaceFullPath: /new-path
+      statusCode: 301
+```
+
+#### HTTP to HTTPS Redirect
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-redirect
+spec:
+  parentRefs:
+    - name: http-gateway  # HTTP listener
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+      backendRefs: []
+```
+
+## Combining Filters
+
+You can combine multiple filters in a single rule:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: combined-filters-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        # 1. Rewrite URL
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+        # 2. Add request headers
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-API-Version
+                value: v2
+        # 3. Modify response headers
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: X-Processed-By
+                value: gateway
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+**Filter execution order:**
+1. RequestHeaderModifier
+2. URLRewrite
+3. Request to backend
+4. ResponseHeaderModifier
+5. Response to client
+
+## Complete Examples
+
+### Example 1: API Version Rewrite
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-rewrite-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /api
+      backendRefs:
+        - name: v1-service
+          port: 80
+```
+
+### Example 2: Authentication Header Injection
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: auth-header-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: Authorization
+                value: "Bearer internal-token"
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+### Example 3: CORS Headers
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cors-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - api.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: Access-Control-Allow-Origin
+                value: "*"
+              - name: Access-Control-Allow-Methods
+                value: "GET, POST, PUT, DELETE"
+              - name: Access-Control-Allow-Headers
+                value: "Content-Type, Authorization"
+      backendRefs:
+        - name: api-service
+          port: 80
+```
+
+## Comparison Table
+
+| Feature | Nginx Ingress | Gateway API |
+|---------|--------------|-------------|
+| URL Rewriting | `rewrite-target` annotation | `URLRewrite` filter |
+| Request Headers | Configuration snippets | `RequestHeaderModifier` filter |
+| Response Headers | Limited support | `ResponseHeaderModifier` filter |
+| Redirects | `permanent-redirect` annotation | `RequestRedirect` filter |
+| Multiple Filters | Complex | Native support |
+| Portability | Nginx-specific | Standard across implementations |
+
+## Best Practices
+
+1. **Filter Order Matters**: Understand filter execution order
+2. **Use ReplacePrefixMatch**: Most common rewrite pattern
+3. **Header Security**: Be careful with sensitive headers
+4. **Redirect Status Codes**: Use 301 for permanent, 302 for temporary
+5. **Test Thoroughly**: URL rewriting can be tricky - test all paths
+6. **Document Changes**: Document filter behavior for team reference
+
+## Common Patterns
+
+### Pattern 1: Strip API Prefix
+
+```yaml
+filters:
+  - type: URLRewrite
+    urlRewrite:
+      path:
+        type: ReplacePrefixMatch
+        replacePrefixMatch: /
+```
+
+### Pattern 2: Add Version Header
+
+```yaml
+filters:
+  - type: RequestHeaderModifier
+    requestHeaderModifier:
+      add:
+        - name: X-API-Version
+          value: v2
+```
+
+### Pattern 3: HTTP to HTTPS Redirect
+
+```yaml
+filters:
+  - type: RequestRedirect
+    requestRedirect:
+      scheme: https
+      statusCode: 301
+```
+
+## Troubleshooting
+
+### Rewrite Not Working?
+
+1. Verify path match type (PathPrefix vs Exact)
+2. Check replacePrefixMatch value
+3. Test with curl to see actual forwarded path
+4. Check Gateway logs for filter processing
+
+### Headers Not Appearing?
+
+1. Verify filter type is correct
+2. Check header name (case-sensitive)
+3. Ensure filter is in the correct rule
+4. Test with curl to inspect headers
+
+### Redirect Loop?
+
+1. Check redirect target doesn't match the original route
+2. Verify status code (301 vs 302)
+3. Ensure redirect filter is in the correct HTTPRoute
+
+## Next Steps
+
+Now that you understand request/response modifications, let's learn about policies:
+
+👉 **[Next: Policies →](/docs/08-policies)**
+
+## Related Examples
+
+- [httproute-url-rewrite.yaml](/examples/06-filters/#httproute-url-rewrite) - URL rewriting
+- [httproute-header-modify.yaml](/examples/06-filters/#httproute-header-modify) - Header modification
+- [httproute-redirect.yaml](/examples/06-filters/#httproute-redirect) - Redirects
+- [ingress-rewrite-equivalent.yaml](/examples/06-filters/#ingress-rewrite-equivalent) - Nginx Ingress equivalent
+

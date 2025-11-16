@@ -1,0 +1,25 @@
+# Path Prefix Matching Example
+# PathPrefix matches any path that starts with the specified prefix
+#
+# Related Documentation: Documentation/03-basic-routing.md
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: path-prefix-route
+spec:
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+            # Matches: /api, /api/, /api/v1, /api/users/123
+            # Doesn't match: /apis, /apiary
+      backendRefs:
+        - name: api-service
+          port: 80
+
