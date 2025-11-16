@@ -8,6 +8,18 @@ Think of Gateway API as the evolution of Ingress Controllers - it solves many of
 
 ## Why Gateway API Exists
 
+### ⚠️ Important: Ingress NGINX Retirement
+
+**Kubernetes SIG Network has announced the retirement of Ingress NGINX.** According to the [official announcement](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/):
+
+- **Best-effort maintenance** will continue until **March 2026**
+- After March 2026, there will be **no further releases, bugfixes, or security updates**
+- **SIG Network recommends migrating to Gateway API** or another Ingress controller immediately
+
+This retirement announcement underscores the importance of learning Gateway API now. Gateway API is not just an improvement over Ingress—it's the **recommended path forward** for Kubernetes networking.
+
+> **Why is Ingress NGINX being retired?** The project has struggled with insufficient maintainership for years, with only one or two people doing development work in their spare time. Despite its popularity, the technical debt and security concerns (such as arbitrary NGINX configuration via annotations) have become insurmountable. Gateway API represents the modern, secure, and maintainable approach to Kubernetes networking.
+
 ### Limitations of Ingress Controllers (Nginx Ingress)
 
 If you've worked with Nginx Ingress Controllers, you've likely encountered these challenges:
@@ -95,17 +107,20 @@ This works with any Gateway API implementation!
 ## When to Use Gateway API vs Ingress
 
 ### Use Gateway API When:
+- ✅ **You're using Ingress NGINX** (retiring March 2026 - migration recommended)
 - ✅ You need advanced routing features (traffic splitting, header matching)
 - ✅ You want portability across different implementations
 - ✅ You have multiple teams (infrastructure vs application)
 - ✅ You need fine-grained policy control
 - ✅ You're starting a new project
+- ✅ You want a future-proof solution with active development
 
 ### Use Ingress When:
-- ✅ You have simple routing needs
-- ✅ You're already heavily invested in Nginx Ingress annotations
-- ✅ Your cluster doesn't support Gateway API yet
-- ✅ You need a quick, simple solution
+- ⚠️ **Only if you're using a non-NGINX Ingress controller** that will continue to be maintained
+- ⚠️ Your cluster doesn't support Gateway API yet (consider upgrading)
+- ⚠️ You have simple routing needs and are using a maintained Ingress controller
+
+> **Note**: If you're currently using Ingress NGINX, you should plan to migrate to Gateway API before March 2026. SIG Network recommends Gateway API as the preferred migration path.
 
 ## Gateway API Versions
 
