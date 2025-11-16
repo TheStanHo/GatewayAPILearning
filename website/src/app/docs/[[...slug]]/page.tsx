@@ -18,6 +18,14 @@ const ArchitectureComparison = dynamic(
   () => import('@/components/diagrams/ArchitectureComparison'),
   { ssr: false }
 )
+const TrafficSplitting = dynamic(
+  () => import('@/components/diagrams/TrafficSplitting'),
+  { ssr: false }
+)
+const CoreConceptsRelationship = dynamic(
+  () => import('@/components/diagrams/CoreConceptsRelationship'),
+  { ssr: false }
+)
 
 // Helper function to extract text from React children
 const extractText = (children: any): string => {
@@ -52,6 +60,8 @@ const createHeadingComponent = (level: number) => {
 
 const components = {
   ArchitectureComparison,
+  TrafficSplitting,
+  CoreConceptsRelationship,
   Alert,
   h2: createHeadingComponent(2),
   h3: createHeadingComponent(3),
