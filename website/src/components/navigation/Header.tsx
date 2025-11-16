@@ -29,7 +29,7 @@ export default function Header() {
       <header className="sticky top-0 z-20 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between gap-2 md:gap-4">
-            <Link href="/" className="text-lg md:text-xl font-bold text-gray-900 truncate">
+            <Link href="/" className="text-lg md:text-xl font-bold text-gray-900 truncate ml-12 md:ml-0">
               Gateway API Learning
             </Link>
 
