@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 export function ScrollToAnchor() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     // Wait for page to render
@@ -20,7 +19,7 @@ export function ScrollToAnchor() {
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [pathname, searchParams])
+  }, [pathname]) // Only depend on pathname, not searchParams
 
   return null
 }

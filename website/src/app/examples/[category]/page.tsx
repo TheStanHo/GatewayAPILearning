@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
 import { getExampleCategories, getExampleFile } from '@/lib/examples'
 import { getExampleSourceAttribution } from '@/lib/sources'
 import { ScrollToAnchor } from '@/components/examples/ScrollToAnchor'
@@ -34,7 +35,9 @@ export default function ExampleCategoryPage({ params }: PageProps) {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <ScrollToAnchor />
+      <Suspense fallback={null}>
+        <ScrollToAnchor />
+      </Suspense>
       <div className="mb-6">
         <Link
           href="/examples"
