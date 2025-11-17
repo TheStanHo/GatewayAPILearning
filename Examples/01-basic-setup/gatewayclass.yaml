@@ -12,9 +12,9 @@ metadata:
 spec:
   # controllerName identifies which controller should handle this GatewayClass
   # Format: <domain>/<controller-name>
-  # For Nginx Gateway Fabric: gateway.nginx.org/nginx-gateway
+  # For Nginx Gateway Fabric: gateway.nginx.org/nginx-gateway-controller
   # For Istio: istio.io/gateway-controller
   # For Contour: projectcontour.io/contour
-  controllerName: gateway.nginx.org/nginx-gateway
+  controllerName: gateway.nginx.org/nginx-gateway-controller
   description: "Nginx Gateway API implementation"
 

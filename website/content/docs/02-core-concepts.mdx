@@ -61,7 +61,7 @@ kind: GatewayClass
 metadata:
   name: nginx-gateway
 spec:
-  controllerName: gateway.nginx.org/nginx-gateway
+  controllerName: gateway.nginx.org/nginx-gateway-controller
 ```
 
 ### Key Differences
@@ -81,8 +81,30 @@ kind: GatewayClass
 metadata:
   name: nginx-gateway
 spec:
-  controllerName: gateway.nginx.org/nginx-gateway
+  controllerName: gateway.nginx.org/nginx-gateway-controller
   description: "Nginx Gateway API implementation"
+```
+
+**NGINX Gateway Fabric Specific Notes:**
+
+- **Single GatewayClass per Controller**: NGF only actively uses **one GatewayClass per controller instance**. The controller is configured via the `--gatewayclass` flag and will only reconcile Gateways that belong to that specific class (typically named "nginx" by default). While the Gateway API specification allows multiple GatewayClasses, NGF's controller is typically deployed to handle one class. To use multiple GatewayClasses, you would need to run separate NGF controller instances, each configured for a different GatewayClass.
+
+- **Controller Name**: The correct `controllerName` for NGINX Gateway Fabric is `gateway.nginx.org/nginx-gateway-controller` (this is the default when using the official Helm chart). Using an incorrect controller name will result in the GatewayClass not being accepted by NGF. When properly configured, the GatewayClass status will show `Accepted: True`.
+
+- **Parameters Reference**: NGF supports an optional `parametersRef` on GatewayClass that references an `NginxProxy` resource for custom NGF settings. This allows you to pass implementation-specific configuration to the data plane:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx-gateway
+spec:
+  controllerName: gateway.nginx.org/nginx-gateway-controller
+  parametersRef:
+    group: gateway.nginx.org
+    kind: NginxProxy
+    name: nginx-proxy-config
+    namespace: nginx-gateway
 ```
 
 **Who manages it?** Cluster administrators
@@ -379,7 +401,7 @@ kind: GatewayClass
 metadata:
   name: nginx-gateway
 spec:
-  controllerName: gateway.nginx.org/nginx-gateway
+  controllerName: gateway.nginx.org/nginx-gateway-controller
 ```
 
 **Step 2: Gateway**
