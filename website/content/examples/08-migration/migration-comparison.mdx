@@ -1,6 +1,16 @@
-# Migration Comparison: Nginx Ingress to Gateway API
-
 This document provides a side-by-side comparison of the migration from Nginx Ingress to Gateway API.
+
+## Before: Nginx Ingress Configuration
+
+Here's the original Nginx Ingress configuration:
+
+<CodeBlock filename="before-ingress.yaml" />
+
+## After: Gateway API Configuration
+
+Here's the migrated Gateway API configuration:
+
+<CodeBlock filename="after-httproute.yaml" />
 
 ## Resource Mapping
 
@@ -100,7 +110,7 @@ This document provides a side-by-side comparison of the migration from Nginx Ing
 
 ## Related Documentation
 
-- [Migration Guide](../Documentation/09-migration-guide.md) - Detailed migration steps
-- [Core Concepts](../Documentation/02-core-concepts.md) - Understanding Gateway API
-- [Best Practices](../Documentation/10-best-practices.md) - Gateway API best practices
+- [Migration Guide](/docs/09-migration-guide) - Detailed migration steps
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API
+- [Best Practices](/docs/10-best-practices) - Gateway API best practices
 

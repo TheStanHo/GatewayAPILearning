@@ -1,0 +1,152 @@
+This page contains examples demonstrating advanced routing patterns in Gateway API, including HTTP method matching, query parameter matching, and complex matching logic combining multiple conditions.
+
+## Advanced Matching
+
+Gateway API supports sophisticated matching capabilities that allow you to route traffic based on multiple criteria simultaneously. These patterns are native to Gateway API, unlike Nginx Ingress which requires server snippets for many of these features.
+
+## Examples
+
+### HTTP Method Matching
+
+Routes traffic based on HTTP method (GET, POST, PUT, DELETE, etc.). Useful for separating read and write operations to different backends.
+
+<CodeBlock filename="httproute-method-match.yaml" />
+
+**Key Points:**
+- Match on HTTP methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, etc.
+- Multiple methods in one match create OR logic (any of these)
+- Useful for separating read/write operations
+- Can combine with path matching for more precise routing
+
+**Common Use Cases:**
+- Separate read and write services
+- Route CORS preflight (OPTIONS) to specific service
+- Different backends for different HTTP methods
+
+### Query Parameter Matching
+
+Routes based on URL query parameters. Native in Gateway API, requires server snippets in Nginx Ingress.
+
+<CodeBlock filename="httproute-query-params.yaml" />
+
+**Key Points:**
+- Match on query parameters (e.g., `?version=v2`)
+- Supports exact matching and regular expressions
+- Useful for API versioning and feature flags
+- Can combine with other match conditions
+
+**Common Use Cases:**
+- API versioning via query params (`?version=v2`)
+- Environment routing (`?env=staging`)
+- Feature flags (`?feature=new-ui`)
+- A/B testing (`?variant=a`)
+
+### Complex Matching Logic
+
+Shows how to combine path, headers, query params, and methods for sophisticated routing rules.
+
+<CodeBlock filename="httproute-multiple-matches.yaml" />
+
+**Key Concepts:**
+
+1. **AND Logic (within a match block)**: All conditions in a single match block must be true
+   ```yaml
+   - matches:
+       - path: /api
+         headers:
+           - name: X-Environment
+             value: staging
+         method: POST
+   ```
+   All of these must match: path AND header AND method
+
+2. **OR Logic (multiple match blocks)**: Any match block can match
+   ```yaml
+   - matches:
+       - path: /api
+         headers:
+           - name: X-Environment
+             value: staging
+       - path: /api
+         headers:
+           - name: X-Environment
+             value: development
+   ```
+   Either staging OR development can match
+
+**Key Points:**
+- Combine multiple match types: path, headers, query params, methods
+- Use AND logic for precise routing
+- Use OR logic for flexible routing
+- Rules are evaluated in order (first match wins)
+
+## Matching Types
+
+Gateway API supports matching on:
+
+1. **Path**: PathPrefix, Exact, RegularExpression
+2. **Headers**: Exact, RegularExpression
+3. **Query Parameters**: Exact, RegularExpression
+4. **HTTP Method**: GET, POST, PUT, DELETE, PATCH, OPTIONS, etc.
+5. **Hostname**: Exact match on hostname
+
+## Best Practices
+
+1. **Order Matters**: Place more specific rules before less specific ones
+2. **Combine Conditions**: Use AND logic for precise routing
+3. **Use OR for Flexibility**: Multiple match blocks for flexible routing
+4. **Test Thoroughly**: Complex matching can be hard to debug - test all scenarios
+5. **Document Logic**: Add comments explaining complex routing rules
+6. **Performance**: More complex matching may add latency - profile if needed
+7. **Default Route**: Always include a default/catch-all route
+
+## Common Patterns
+
+### Pattern 1: Environment + Path Routing
+```yaml
+- matches:
+    - path:
+        type: PathPrefix
+        value: /api
+      headers:
+        - name: X-Environment
+          value: staging
+```
+
+### Pattern 2: Method + Path Separation
+```yaml
+- matches:
+    - path:
+        type: PathPrefix
+        value: /api
+      method: POST
+```
+
+### Pattern 3: Query Parameter Versioning
+```yaml
+- matches:
+    - queryParams:
+        - name: version
+          value: v2
+```
+
+### Pattern 4: Complex Multi-Condition
+```yaml
+- matches:
+    - path:
+        type: PathPrefix
+        value: /api
+      headers:
+        - name: X-User-Type
+          value: premium
+      method: POST
+      queryParams:
+        - name: version
+          value: v2
+```
+
+## Related Documentation
+
+- [Advanced Routing Documentation](/docs/04-advanced-routing) - Detailed explanation of advanced matching
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+

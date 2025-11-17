@@ -1,0 +1,112 @@
+This page contains examples demonstrating TLS/SSL configuration in Gateway API. TLS is configured at the Gateway level, providing centralized certificate management and better separation of concerns.
+
+## TLS in Gateway API
+
+Unlike Nginx Ingress where TLS is configured per Ingress resource, Gateway API configures TLS at the Gateway level. This provides:
+
+- **Centralized Management**: Certificates managed once at the Gateway
+- **Better Security**: Infrastructure team controls TLS configuration
+- **Multi-Tenant Support**: Multiple HTTPRoutes can share the same TLS configuration
+- **Clear Separation**: TLS (infrastructure) separate from routing (application)
+
+## Examples
+
+### Gateway with TLS Configuration
+
+Basic TLS configuration at the Gateway level. TLS certificates are referenced from Kubernetes Secrets.
+
+<CodeBlock filename="gateway-tls.yaml" />
+
+**Key Points:**
+- TLS is configured in the Gateway resource, not HTTPRoute
+- Certificates are stored in Kubernetes Secrets
+- Use `certificateRefs` to reference the Secret
+- TLS mode: `Terminate` (most common) or `Passthrough`
+
+**Creating TLS Secrets:**
+
+```powershell
+# Manual creation
+kubectl create secret tls example-tls \
+  --cert=path/to/cert.crt \
+  --key=path/to/cert.key
+
+# Or use cert-manager for automatic certificate management
+```
+
+### TLS Termination
+
+Shows TLS termination at the Gateway. The Gateway handles TLS, and backends receive plain HTTP.
+
+<CodeBlock filename="gateway-tls-termination.yaml" />
+
+**Flow:**
+```
+Client → HTTPS → Gateway (TLS termination) → HTTP → Backend Service
+```
+
+**Key Points:**
+- TLS is terminated at the Gateway
+- Backends receive plain HTTP (port 80)
+- Simplifies backend configuration
+- Gateway handles all TLS complexity
+
+## Ingress Equivalent
+
+For comparison, here's the equivalent Nginx Ingress configuration:
+
+<CodeBlock filename="ingress-tls-equivalent.yaml" />
+
+**Key Differences:**
+- **Nginx Ingress**: TLS configured in Ingress resource (per route)
+- **Gateway API**: TLS configured in Gateway resource (centralized)
+- **Nginx Ingress**: Each Ingress can have different TLS config
+- **Gateway API**: TLS configured once, shared by all HTTPRoutes
+
+## TLS Modes
+
+1. **Terminate** (most common): Gateway terminates TLS, backends receive HTTP
+2. **Passthrough**: Gateway passes TLS through to backends (for mTLS or backend TLS)
+
+## Certificate Management
+
+### Manual Certificate Creation
+
+```powershell
+kubectl create secret tls example-tls \
+  --cert=path/to/cert.crt \
+  --key=path/to/cert.key
+```
+
+### Using cert-manager (Recommended)
+
+cert-manager automatically manages certificates from Let's Encrypt or other issuers:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-cert
+spec:
+  secretName: example-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - example.com
+```
+
+## Best Practices
+
+1. **Use cert-manager**: Automate certificate management and renewal
+2. **Centralize TLS**: Configure TLS at Gateway level, not per route
+3. **Terminate at Gateway**: Use TLS termination for simpler backend configuration
+4. **Monitor Expiration**: Set up alerts for certificate expiration
+5. **Use Strong Ciphers**: Ensure Gateway uses modern TLS configurations
+6. **Separate Concerns**: Let infrastructure team manage TLS, application team manages routing
+
+## Related Documentation
+
+- [TLS/SSL Documentation](/docs/06-tls-ssl) - Detailed explanation of TLS configuration
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+

@@ -1,6 +1,4 @@
-# Basic Setup Examples
-
-This directory contains the fundamental Gateway API resources you need to get started: GatewayClass, Gateway, and HTTPRoute.
+This page contains the fundamental Gateway API resources you need to get started: GatewayClass, Gateway, and HTTPRoute.
 
 ## ⚠️ Prerequisites - Install Gateway API CRDs First!
 
@@ -56,29 +54,36 @@ Wait for the deployment to be ready:
 kubectl wait --timeout=5m -n nginx-gateway deployment/ngf-nginx-gateway-fabric --for=condition=Available
 ```
 
-## Files in This Directory
+## Complete Setup Order
 
-### 1. gatewayclass.yaml
+Follow these steps in order:
 
-Defines the type of Gateway controller to use. This is similar to `IngressClass` in the Ingress world.
+### Step 3: Apply GatewayClass
+
+**Note:** NGINX Gateway Fabric automatically creates a GatewayClass named `nginx`. This file is only needed if you want to customize it or use a different name.
+
+<CodeBlock filename="gatewayclass.yaml" />
 
 **Apply this first:**
+
 ```powershell
 kubectl apply -f gatewayclass.yaml
 ```
 
-**Note:** NGINX Gateway Fabric automatically creates a GatewayClass named `nginx`. This file is only needed if you want to customize it or use a different name.
-
-### 2. gateway.yaml
+### Step 4: Apply Gateway
 
 Creates a Gateway resource that defines network endpoints (listeners) for traffic. This is similar to setting up an Ingress Controller.
 
+<CodeBlock filename="gateway.yaml" />
+
 **Apply after GatewayClass:**
+
 ```powershell
 kubectl apply -f gateway.yaml
 ```
 
 **Verify:**
+
 ```powershell
 kubectl get gateway
 kubectl describe gateway my-gateway
@@ -86,56 +91,30 @@ kubectl describe gateway my-gateway
 
 The Gateway should show `Ready` status and have an address assigned.
 
-### 3. httproute-basic.yaml
+### Step 5: Apply HTTPRoute
 
 Defines routing rules for HTTP/HTTPS traffic. This is similar to an `Ingress` resource.
 
+<CodeBlock filename="httproute-basic.yaml" />
+
 **Apply after Gateway:**
+
 ```powershell
 kubectl apply -f httproute-basic.yaml
 ```
 
 **Verify:**
+
 ```powershell
 kubectl get httproute
 kubectl describe httproute my-app-route
 ```
 
-### 4. ingress-equivalent.yaml
+## Ingress Equivalent (Reference Only)
 
-Shows the equivalent Nginx Ingress configuration for comparison. This is for reference only - don't apply this if you're using Gateway API.
+For comparison, here's the equivalent Nginx Ingress configuration. **This is for reference only - don't apply this if you're using Gateway API.**
 
-## Complete Setup Order
-
-Follow these steps in order:
-
-1. **⚠️ Install Gateway API CRDs (REQUIRED FIRST STEP):**
-   ```powershell
-   kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.2.1" | kubectl apply -f -
-   ```
-   
-   Verify installation:
-   ```powershell
-   kubectl get crd | Select-String gateway
-   ```
-
-2. **Install NGINX Gateway Fabric** (see Prerequisites above):
-   ```powershell
-   helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway
-   ```
-
-3. **Apply GatewayClass** (optional - NGINX Gateway Fabric creates one automatically):
-   ```powershell
-   kubectl apply -f gatewayclass.yaml
-   ```
-4. **Apply Gateway**:
-   ```powershell
-   kubectl apply -f gateway.yaml
-   ```
-5. **Apply HTTPRoute**:
-   ```powershell
-   kubectl apply -f httproute-basic.yaml
-   ```
+<CodeBlock filename="ingress-equivalent.yaml" />
 
 ## Troubleshooting
 
@@ -159,6 +138,7 @@ Follow these steps in order:
 - Network policies blocking traffic
 
 **Check:**
+
 ```powershell
 kubectl get pods -n nginx-gateway
 kubectl get gatewayclass

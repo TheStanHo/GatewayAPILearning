@@ -1,0 +1,65 @@
+This page contains examples demonstrating different path matching strategies in Gateway API: prefix matching, exact matching, and multiple path rules.
+
+## Path Matching Types
+
+Gateway API supports three types of path matching:
+
+1. **PathPrefix** - Matches any path that starts with the specified prefix
+2. **Exact** - Matches only the exact path specified
+3. **RegularExpression** - Matches paths using regular expressions (not shown in these examples)
+
+## Examples
+
+### Path Prefix Matching
+
+PathPrefix matches any path that starts with the specified prefix. This is the most common type of path matching.
+
+<CodeBlock filename="httproute-path-prefix.yaml" />
+
+**Key Points:**
+- Matches: `/api`, `/api/`, `/api/v1`, `/api/users/123`
+- Doesn't match: `/apis`, `/apiary`
+- Use this for routing API endpoints, static file paths, or any hierarchical path structure
+
+### Exact Path Matching
+
+Exact matches only the exact path specified. Useful for health checks, metrics endpoints, or specific routes.
+
+<CodeBlock filename="httproute-path-exact.yaml" />
+
+**Key Points:**
+- Matches: `/health` (exactly)
+- Doesn't match: `/health/`, `/health/check`, `/healthcheck`
+- Use this when you need precise path matching without any sub-paths
+
+### Multiple Path Rules
+
+Shows how to route different paths to different services. Rules are evaluated in order - first match wins.
+
+<CodeBlock filename="httproute-multiple-paths.yaml" />
+
+**Key Points:**
+- Rules are evaluated in order (top to bottom)
+- More specific paths should come before less specific ones
+- The catch-all rule (`/`) should be last
+- Each rule can route to different backend services
+
+## Ingress Equivalent
+
+For comparison, here's the equivalent Nginx Ingress configuration:
+
+<CodeBlock filename="ingress-path-equivalent.yaml" />
+
+## Best Practices
+
+1. **Order Matters**: Place more specific paths before less specific ones
+2. **Use PathPrefix for APIs**: Most API routes benefit from prefix matching
+3. **Use Exact for Specific Endpoints**: Health checks, metrics, and webhooks often need exact matching
+4. **Catch-All Last**: Always place the default/catch-all rule (`/`) at the end
+5. **Test Path Matching**: Verify that your paths match as expected, especially with trailing slashes
+
+## Related Documentation
+
+- [Basic Routing Documentation](/docs/03-basic-routing) - Detailed explanation of path matching
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+

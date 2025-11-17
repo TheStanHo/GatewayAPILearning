@@ -1,0 +1,61 @@
+This page contains examples demonstrating header-based routing in Gateway API. Header routing allows you to route traffic based on HTTP headers, which is useful for A/B testing, feature flags, environment routing, and user segmentation.
+
+## Header Matching
+
+Gateway API supports native header matching, which is a significant advantage over Nginx Ingress where header-based routing requires custom server snippets.
+
+## Examples
+
+### Basic Header Matching
+
+Routes traffic based on a single header value. This example routes to different services based on the `X-Environment` header.
+
+<CodeBlock filename="httproute-header-match.yaml" />
+
+**Key Points:**
+- Header matching is native in Gateway API (no annotations needed)
+- Headers are matched exactly by default
+- Can combine header matching with path matching
+- Default route handles requests without matching headers
+
+### Multiple Header Conditions
+
+Shows AND logic (all headers must match) and OR logic (multiple matches). Demonstrates complex routing scenarios.
+
+<CodeBlock filename="httproute-multiple-headers.yaml" />
+
+**Key Points:**
+- **AND Logic**: All headers in a single `headers` array must match
+- **OR Logic**: Multiple match blocks - any one can match
+- Useful for feature flags, user segmentation, and environment routing
+- Can combine with path matching for complex routing rules
+
+## Ingress Equivalent
+
+For comparison, here's the equivalent Nginx Ingress configuration:
+
+<CodeBlock filename="ingress-header-equivalent.yaml" />
+
+**Note:** Nginx Ingress requires server snippets for header routing, which is Nginx-specific and not portable.
+
+## Use Cases
+
+1. **Environment Routing**: Route to staging/production based on headers
+2. **Feature Flags**: Enable features for specific users or groups
+3. **A/B Testing**: Route traffic to different service versions
+4. **User Segmentation**: Route premium users to different backends
+5. **Canary Deployments**: Gradually route traffic to new versions
+
+## Best Practices
+
+1. **Use Descriptive Header Names**: Use clear, consistent header names (e.g., `X-Environment`, `X-User-Type`)
+2. **Combine with Path Matching**: Use headers together with paths for more precise routing
+3. **Default Route**: Always include a default route for requests without matching headers
+4. **Header Values**: Be consistent with header value formats (case-sensitive)
+5. **Security**: Don't rely on headers for security - validate on the backend
+
+## Related Documentation
+
+- [Advanced Routing Documentation](/docs/04-advanced-routing) - Detailed explanation of header matching
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+

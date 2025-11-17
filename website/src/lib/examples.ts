@@ -30,7 +30,7 @@ export function getExampleCategories(): ExampleCategory[] {
     if (entry.isDirectory()) {
       const categoryPath = path.join(examplesDirectory, entry.name)
       const files = fs.readdirSync(categoryPath)
-        .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml') || file.endsWith('.md'))
+        .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml') || file.endsWith('.md') || file.endsWith('.mdx'))
         .map((file) => {
           const filePath = path.join(categoryPath, file)
           const content = fs.readFileSync(filePath, 'utf8')

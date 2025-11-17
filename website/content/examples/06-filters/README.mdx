@@ -1,0 +1,104 @@
+This page contains examples demonstrating filters in Gateway API for modifying requests and responses. Filters provide powerful capabilities for URL rewriting, header modification, and redirects.
+
+## Filters in Gateway API
+
+Filters allow you to modify requests before they reach backends and responses before they reach clients. This replaces Nginx Ingress annotations with native, portable filter types.
+
+## Examples
+
+### URL Rewriting
+
+Rewrites request paths before forwarding to backend. Replaces the `nginx.ingress.kubernetes.io/rewrite-target` annotation.
+
+<CodeBlock filename="httproute-url-rewrite.yaml" />
+
+**Key Points:**
+- Use `URLRewrite` filter with `ReplacePrefixMatch` type
+- Strips or replaces path prefixes
+- Useful for API versioning and path migrations
+- More flexible than Nginx Ingress rewrite-target annotation
+
+**Common Use Cases:**
+- Strip `/api` prefix: `/api/users` → `/users`
+- Path migrations: `/old-api` → `/new-api`
+- Version routing: `/v1/api` → `/api`
+
+### Header Modification
+
+Modifies headers before forwarding (request) and before responding (response). Supports add, set, and remove operations.
+
+<CodeBlock filename="httproute-header-modify.yaml" />
+
+**Key Points:**
+- **RequestHeaderModifier**: Modify headers before forwarding to backend
+- **ResponseHeaderModifier**: Modify headers before responding to client
+- Operations: `add` (add new), `set` (overwrite), `remove` (delete)
+- Useful for adding metadata, security headers, and debugging
+
+**Common Use Cases:**
+- Add API version headers
+- Set security headers (CORS, CSP)
+- Remove sensitive headers
+- Add request tracing headers
+
+### Redirects
+
+Redirects requests to a different URL. Useful for HTTP to HTTPS redirects, domain migrations, and path changes.
+
+<CodeBlock filename="httproute-redirect.yaml" />
+
+**Key Points:**
+- Use `RequestRedirect` filter
+- Supports permanent (301) and temporary (302) redirects
+- Can redirect to different scheme, hostname, or path
+- No backend needed for redirect routes
+
+**Common Use Cases:**
+- HTTP to HTTPS redirects
+- Domain migrations
+- Path changes
+- Temporary redirects for maintenance
+
+## Ingress Equivalent
+
+For comparison, here's the equivalent Nginx Ingress configuration:
+
+<CodeBlock filename="ingress-rewrite-equivalent.yaml" />
+
+**Key Differences:**
+- **Nginx Ingress**: Uses annotations (e.g., `rewrite-target`)
+- **Gateway API**: Uses native filters (portable, standard)
+- **Nginx Ingress**: Limited options, Nginx-specific
+- **Gateway API**: More expressive, works across implementations
+
+## Filter Types
+
+1. **URLRewrite**: Rewrite request paths
+2. **RequestHeaderModifier**: Modify request headers
+3. **ResponseHeaderModifier**: Modify response headers
+4. **RequestRedirect**: Redirect requests
+5. **RequestMirror**: Mirror traffic (see traffic splitting examples)
+6. **ExtensionRef**: Custom filters (implementation-specific)
+
+## Filter Order
+
+Filters are processed in order:
+1. Request filters (URLRewrite, RequestHeaderModifier)
+2. Request forwarding to backend
+3. Response filters (ResponseHeaderModifier)
+4. Response to client
+
+## Best Practices
+
+1. **Use Filters Sparingly**: Only when necessary - prefer backend logic when possible
+2. **Test Thoroughly**: Filters can affect request/response flow significantly
+3. **Document Filter Purpose**: Add comments explaining why filters are used
+4. **Monitor Performance**: Some filters may add latency
+5. **Security Headers**: Use ResponseHeaderModifier for security headers (CORS, CSP, etc.)
+6. **Avoid Sensitive Data**: Don't add sensitive information in headers
+
+## Related Documentation
+
+- [Request/Response Modifications Documentation](/docs/07-request-response-modifications) - Detailed explanation of filters
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+

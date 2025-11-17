@@ -1,0 +1,79 @@
+This page contains examples demonstrating traffic splitting, canary deployments, and traffic mirroring in Gateway API. These patterns are essential for safe deployments, A/B testing, and gradual rollouts.
+
+## Traffic Splitting Patterns
+
+Gateway API provides native support for traffic splitting, making it much easier than Nginx Ingress which requires multiple resources and annotations.
+
+## Examples
+
+### Weighted Traffic Splitting
+
+Splits traffic between multiple backends based on weights. Weights are relative percentages that determine how traffic is distributed.
+
+<CodeBlock filename="httproute-weighted.yaml" />
+
+**Key Points:**
+- Weights are relative (e.g., 90 + 10 = 100, so 90% and 10%)
+- All weights are summed, then each backend receives its proportional share
+- Useful for gradual rollouts and A/B testing
+- Can split between any number of backends
+
+### Canary Deployment
+
+Shows progressive canary rollout pattern. Adjust weights to gradually increase canary traffic from 5% to 100%.
+
+<CodeBlock filename="httproute-canary.yaml" />
+
+**Progressive Rollout Pattern:**
+1. **Phase 1**: 95/5 (5% canary) - Initial testing
+2. **Phase 2**: 90/10 (10% canary) - Current example
+3. **Phase 3**: 75/25 (25% canary) - Increased confidence
+4. **Phase 4**: 50/50 (50% canary) - Half traffic
+5. **Phase 5**: 0/100 (100% canary) - Complete rollout
+
+**Key Points:**
+- Start with small percentage (5-10%)
+- Monitor metrics and errors at each phase
+- Gradually increase based on success metrics
+- Rollback by adjusting weights back
+
+### Traffic Mirroring
+
+Sends a copy of traffic to a secondary service. The primary service still handles the request and responds normally.
+
+<CodeBlock filename="httproute-mirror.yaml" />
+
+**Key Points:**
+- Primary service handles the actual request
+- Mirror service receives a copy asynchronously
+- Mirror responses don't affect the primary response
+- Useful for testing, analytics, and debugging
+
+**Use Cases:**
+- Testing new services with production traffic
+- Analytics and monitoring
+- A/B testing data collection
+- Debugging production issues
+
+## Ingress Equivalent
+
+For comparison, here's the equivalent Nginx Ingress configuration:
+
+<CodeBlock filename="ingress-canary-equivalent.yaml" />
+
+**Note:** Nginx Ingress requires TWO separate Ingress resources for canary deployments, while Gateway API uses a single HTTPRoute with weights.
+
+## Best Practices
+
+1. **Start Small**: Begin with 5-10% traffic for canary deployments
+2. **Monitor Metrics**: Watch error rates, latency, and business metrics
+3. **Gradual Increase**: Increase traffic gradually (5% → 10% → 25% → 50% → 100%)
+4. **Quick Rollback**: Be ready to adjust weights back if issues occur
+5. **Use Mirroring Carefully**: Mirroring doubles traffic to backends - ensure capacity
+6. **Test in Staging**: Test traffic splitting patterns in staging first
+
+## Related Documentation
+
+- [Traffic Splitting Documentation](/docs/05-traffic-splitting) - Detailed explanation of traffic splitting
+- [Core Concepts](/docs/02-core-concepts) - Understanding Gateway API fundamentals
+
