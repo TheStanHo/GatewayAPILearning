@@ -10,9 +10,9 @@ export default function Footer() {
         <div className="max-w-4xl mx-auto mb-8">
           {/* Disclaimer */}
           <div className="p-4 md:p-6 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Disclaimer</h3>
-            <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
-              This website is an <strong>independent educational resource</strong> and is not affiliated with, 
+            <h3 className="text-sm font-semibold text-gray-900 mb-2 text-center">Disclaimer</h3>
+            <p className="text-xs md:text-sm text-gray-600 leading-relaxed text-center">
+              This website is an <strong>independent educational resource</strong> originally created by stanho.dev for my own learning and is not affiliated with, 
               endorsed by, or sponsored by the Gateway API project, Kubernetes SIG Network, NGINX, Inc., or 
               any other organization. All content is provided for educational purposes only. While we strive 
               for accuracy, please verify information with{' '}
@@ -33,7 +33,7 @@ export default function Footer() {
               >
                 NGINX Gateway Fabric documentation
               </a>
-              . Examples are provided as-is without warranty. Use at your own risk.
+              . Examples are provided as-is without warranty. <strong>Use at your own risk.</strong>
             </p>
           </div>
         </div>
