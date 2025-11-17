@@ -440,7 +440,7 @@ spec:
 
 ## Combining Filters
 
-You can combine multiple filters in a single rule:
+You can combine multiple filters of different types in a single rule:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -487,6 +487,29 @@ spec:
 3. Request to backend
 4. ResponseHeaderModifier
 5. Response to client
+
+> **⚠️ NGINX Gateway Fabric Limitation:**
+> 
+> NGF supports only **one filter of a given type per route rule**. If multiple filters of the same type are specified in a single rule, NGF will apply only the first filter and silently ignore subsequent filters of that type.
+> 
+> **Exception:** Multiple `RequestMirror` filters are allowed in a single rule.
+> 
+> **Example of what won't work in NGF:**
+> ```yaml
+> filters:
+>   - type: URLRewrite
+>     urlRewrite:
+>       path:
+>         type: ReplacePrefixMatch
+>         replacePrefixMatch: /v1
+>   - type: URLRewrite  # ❌ This second URLRewrite will be ignored by NGF
+>     urlRewrite:
+>       path:
+>         type: ReplacePrefixMatch
+>         replacePrefixMatch: /v2
+> ```
+> 
+> **Best Practice:** Use only one filter of each type per rule, or split into multiple rules if you need different filter configurations.
 
 ## Complete Examples
 

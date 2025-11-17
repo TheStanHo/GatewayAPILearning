@@ -420,7 +420,7 @@ When multiple policies apply:
 
 **Important:** Policy support varies by Gateway API implementation:
 
-- **Nginx Gateway Fabric**: Supports RetryPolicy, TimeoutPolicy
+- **Nginx Gateway Fabric**: Policy support is evolving. Check the [NGF documentation](https://docs.nginx.com/nginx-gateway-fabric/) for current policy support status. Note that NGF does not support extended fields in HTTPRoute rules such as `timeouts`, `retries`, or `sessionPersistence` - these fields will be ignored if defined in HTTPRoute rules.
 - **Istio**: Supports many policies
 - **Contour**: Policy support varies
 - **Kong**: Has policy support

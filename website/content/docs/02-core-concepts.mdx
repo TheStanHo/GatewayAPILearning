@@ -291,6 +291,64 @@ rules:
         port: 80
 ```
 
+#### Cross-Namespace Routing and ReferenceGrant
+
+Gateway API supports cross-namespace routing, but requires explicit authorization for security:
+
+- **Cross-Namespace Gateway Attachment**: If an HTTPRoute is in a different namespace than the Gateway, the Gateway's `allowedRoutes` configuration must permit it (e.g., `from: All` or using a namespace selector).
+
+- **Cross-Namespace Backend References**: If an HTTPRoute's `backendRefs` point to a Service in another namespace, a **ReferenceGrant** resource is required in the target namespace to authorize the reference.
+
+**Example: HTTPRoute referencing a cross-namespace Service**
+
+```yaml
+# HTTPRoute in namespace "app"
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+  namespace: app
+spec:
+  parentRefs:
+    - name: my-gateway
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: backend-service
+          namespace: backend  # Different namespace!
+          port: 80
+```
+
+**ReferenceGrant in the target namespace (required):**
+
+```yaml
+# ReferenceGrant in namespace "backend"
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: allow-app-namespace
+  namespace: backend
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: app
+  to:
+    - group: ""
+      kind: Service
+```
+
+**NGINX Gateway Fabric Note:** NGF fully enforces this security model. An HTTPRoute cannot send traffic to a cross-namespace Service without an appropriate ReferenceGrant. NGF supports the ReferenceGrant resource for this purpose.
+
+**NGINX Gateway Fabric Limitations:**
+
+- **Filter Limitations**: NGF supports only **one filter of a given type per route rule**. If multiple filters of the same type are listed in a single rule, NGF will apply only the first and ignore subsequent filters. The exception is `RequestMirror` filters - multiple `RequestMirror` filters are allowed in a single rule.
+
+- **Extended Fields Not Supported**: NGF does not yet support some extended fields in HTTPRoute rules such as `timeouts`, `retries`, or `sessionPersistence`. If these fields are defined in an HTTPRoute, NGF will ignore them. NGF focuses on core routing features and defers advanced traffic policies to future releases.
+
 **Who manages it?** Application developers
 
 ## 4. BackendRef
