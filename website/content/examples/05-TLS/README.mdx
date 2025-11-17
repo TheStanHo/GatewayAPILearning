@@ -21,7 +21,9 @@ Basic TLS configuration at the Gateway level. TLS certificates are referenced fr
 - TLS is configured in the Gateway resource, not HTTPRoute
 - Certificates are stored in Kubernetes Secrets
 - Use `certificateRefs` to reference the Secret
-- TLS mode: `Terminate` (most common) or `Passthrough`
+- TLS mode: `Terminate` (most common)
+
+> **NGINX Gateway Fabric Note**: NGF only supports `Terminate` mode. TLS passthrough is not supported by NGF.
 
 **Creating TLS Secrets:**
 
@@ -66,7 +68,9 @@ For comparison, here's the equivalent Nginx Ingress configuration:
 ## TLS Modes
 
 1. **Terminate** (most common): Gateway terminates TLS, backends receive HTTP
+   - ✅ Supported by NGINX Gateway Fabric
 2. **Passthrough**: Gateway passes TLS through to backends (for mTLS or backend TLS)
+   - ❌ **Not supported by NGINX Gateway Fabric** - NGF only supports TLS termination
 
 ## Certificate Management
 

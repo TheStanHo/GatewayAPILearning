@@ -148,6 +148,11 @@ listeners:
         - name: my-cert
 ```
 
+**NGINX Gateway Fabric Limitations:**
+- **Protocol Support**: NGF only supports `HTTP` and `HTTPS` protocols. Protocols like `TCP`, `UDP`, or generic `TLS` (passthrough) are not supported. NGF focuses on Layer 7 (HTTP/HTTPS) routing.
+- **TLS Certificates**: NGF supports at most **one TLS certificate reference per listener**. If multiple certificates are specified, only the first will be used.
+- **TLS Mode**: Only `Terminate` mode is supported. TLS passthrough is not supported in NGF.
+
 #### Allowed Routes
 
 Controls which HTTPRoutes can attach to this Gateway:
@@ -157,6 +162,13 @@ allowedRoutes:
   namespaces:
     from: All  # or Same, or Selector
 ```
+
+#### Gateway Addresses
+
+Gateway addresses define how external traffic reaches the Gateway. In NGINX Gateway Fabric:
+
+- **Dynamic Address Allocation**: NGF does **not** support automatic address allocation when `spec.addresses` is left empty. You should explicitly specify addresses in the Gateway spec, or the Gateway will use the Service IP from the NGINX data plane (which may be a LoadBalancer or NodePort Service depending on your cluster configuration).
+- **Multiple Gateways**: NGF supports deploying multiple Gateway resources concurrently, each with its own independent NGINX data plane deployment. This allows different teams or applications to have isolated Gateways.
 
 **Who manages it?** Infrastructure/Operations teams
 

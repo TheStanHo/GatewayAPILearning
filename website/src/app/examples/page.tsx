@@ -3,8 +3,11 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getExampleCategories } from '@/lib/examples'
 import { getContentBySlug } from '@/lib/mdx'
 import { FileCode } from 'lucide-react'
+import { Alert } from '@/components/content/Alert'
 
-const components = {}
+const components = {
+  Alert,
+}
 
 export default async function ExamplesPage() {
   const categories = getExampleCategories()
@@ -13,13 +16,13 @@ export default async function ExamplesPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {content && content.content ? (
-        <div className="prose prose-lg max-w-none mb-12">
+        <div className="prose prose-base max-w-none mb-12">
           <MDXRemote source={content.content} components={components} />
         </div>
       ) : (
         <div className="mb-12">
-          <h1 className="text-3xl font-bold mb-4">Code Examples</h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <h1 className="text-2xl font-bold mb-4">Code Examples</h1>
+          <p className="text-lg text-gray-600 mb-8">
             Working YAML examples with side-by-side comparisons of Gateway API and Ingress.
           </p>
         </div>

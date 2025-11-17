@@ -9,6 +9,7 @@ import { getExampleCategories, getExampleFile } from '@/lib/examples'
 import { getExampleSourceAttribution } from '@/lib/sources'
 import { ScrollToAnchor } from '@/components/examples/ScrollToAnchor'
 import { CodeBlock } from '@/components/examples/CodeBlock'
+import { Alert } from '@/components/content/Alert'
 import path from 'path'
 
 // Note: ssr: false removed for Next.js 16 compatibility
@@ -117,7 +118,7 @@ export default async function ExampleCategoryPage({ params }: PageProps) {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-4">
         {category.name
           .split('-')
           .filter((word) => !/^\d+$/.test(word)) // Filter out numeric-only words
@@ -152,6 +153,7 @@ export default async function ExampleCategoryPage({ params }: PageProps) {
                   <MDXRemote 
                     source={file.content}
                     components={{
+                      Alert,
                       CodeBlock: (props: any) => {
                         const { filename, content } = props
                         const fileContent = content || filesMap[filename] || ''

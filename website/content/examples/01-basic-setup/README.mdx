@@ -1,10 +1,10 @@
 This page contains the fundamental Gateway API resources you need to get started: GatewayClass, Gateway, and HTTPRoute.
 
-## ⚠️ Prerequisites - Install Gateway API CRDs First!
-
-**🚨 CRITICAL: Before applying ANY of these examples, you MUST install the Gateway API Custom Resource Definitions (CRDs) in your Kubernetes cluster.**
+<Alert type="important" title="🚨 CRITICAL: Install Gateway API CRDs First!">
+Before applying ANY of these examples, you MUST install the Gateway API Custom Resource Definitions (CRDs) in your Kubernetes cluster.
 
 Gateway API resources (GatewayClass, Gateway, HTTPRoute, etc.) are **NOT** part of standard Kubernetes - they need to be installed as CRDs first. **This is the most common mistake!** If you skip this step, all `kubectl apply` commands will fail with errors like "no matches for kind 'GatewayClass'".
+</Alert>
 
 ### Step 1: Install Gateway API CRDs
 

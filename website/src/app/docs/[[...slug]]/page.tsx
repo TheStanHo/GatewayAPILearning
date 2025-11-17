@@ -13,7 +13,6 @@ import path from 'path'
 import remarkGfm from 'remark-gfm'
 import { CopyButton } from '@/components/code/CopyButton'
 import { Alert } from '@/components/content/Alert'
-import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import React from 'react'
 import type { Metadata } from 'next'
 
@@ -469,8 +468,6 @@ export default async function DocPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Feedback Widget */}
-        <FeedbackWidget pageSlug={slug} pageTitle={title} />
 
         {/* Previous/Next Navigation */}
         {(prevDoc || nextDoc) && (

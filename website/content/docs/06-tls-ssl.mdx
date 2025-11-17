@@ -65,7 +65,7 @@ HTTPRoutes automatically use the Gateway's TLS configuration.
 
 ## TLS Modes
 
-Gateway API supports different TLS modes:
+Gateway API supports different TLS modes, but **NGINX Gateway Fabric only supports TLS termination**:
 
 ### 1. Terminate (TLS Termination)
 
@@ -95,9 +95,15 @@ spec:
 
 **Use case:** Most common pattern. Gateway handles TLS, backends receive plain HTTP.
 
-### 2. Passthrough
+**NGINX Gateway Fabric Note:** NGF only supports `Terminate` mode. TLS passthrough is not supported.
 
-TLS is passed through to the backend service without termination.
+### 2. Passthrough (Not Supported by NGF)
+
+> **⚠️ Not Supported by NGINX Gateway Fabric**
+> 
+> TLS passthrough is part of the Gateway API specification but is **not supported by NGINX Gateway Fabric**. NGF focuses on Layer 7 (HTTP/HTTPS) routing and only supports TLS termination.
+> 
+> The example below shows how TLS passthrough would be configured in Gateway API, but **this will not work with NGINX Gateway Fabric**. If you need TLS passthrough, you would need to use a different Gateway API implementation that supports it.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -117,7 +123,7 @@ spec:
           from: All
 ```
 
-**Use case:** Backend services handle their own TLS certificates.
+**Use case:** Backend services handle their own TLS certificates (e.g., for mTLS or when backends manage their own certificates).
 
 ## Certificate Management
 
@@ -172,6 +178,8 @@ spec:
         namespaces:
           from: All
 ```
+
+**NGINX Gateway Fabric Limitation:** NGF supports **at most one TLS certificate reference per listener**. If multiple certificates are specified in `certificateRefs`, only the first certificate will be used.
 
 ## Multiple Certificates
 
@@ -276,7 +284,9 @@ HTTPRoutes can attach to either listener.
 
 ### TLS Version and Cipher Suites
 
-Some Gateway API implementations support TLS options:
+> **⚠️ Not Supported by NGINX Gateway Fabric**
+> 
+> The `listener.tls.options` field is part of the Gateway API specification but is **not supported by NGINX Gateway Fabric**. If you specify TLS options in a Gateway resource, NGF will ignore them.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -299,7 +309,7 @@ spec:
           # Check your Gateway implementation docs
 ```
 
-**Note:** TLS options are implementation-specific. Check your Gateway provider's documentation.
+**Note:** TLS options are implementation-specific. Check your Gateway provider's documentation. Some Gateway API implementations support TLS options for configuring TLS versions and cipher suites, but NGF does not currently support this feature. For TLS configuration in NGF, you can use the `NginxProxy` custom resource if you need advanced TLS settings.
 
 ## Mutual TLS (mTLS)
 
@@ -422,15 +432,16 @@ spec:
 
 ## Comparison Table
 
-| Feature | Nginx Ingress | Gateway API |
-|---------|--------------|-------------|
-| TLS Location | Ingress resource | Gateway resource |
-| Certificate Storage | Kubernetes Secrets | Kubernetes Secrets |
-| TLS Termination | Supported | `mode: Terminate` |
-| TLS Passthrough | Supported | `mode: Passthrough` |
-| Multiple Certificates | Multiple Ingress resources | Multiple listeners |
-| Wildcard Certificates | Supported | Supported |
-| Certificate Management | Manual or cert-manager | Manual or cert-manager |
+| Feature | Nginx Ingress | Gateway API | NGINX Gateway Fabric |
+|---------|--------------|-------------|---------------------|
+| TLS Location | Ingress resource | Gateway resource | Gateway resource |
+| Certificate Storage | Kubernetes Secrets | Kubernetes Secrets | Kubernetes Secrets |
+| TLS Termination | Supported | `mode: Terminate` | ✅ Supported (`Terminate` only) |
+| TLS Passthrough | Supported | `mode: Passthrough` | ❌ Not supported |
+| Multiple Certificates | Multiple Ingress resources | Multiple listeners | ✅ Multiple listeners (one cert per listener) |
+| Wildcard Certificates | Supported | Supported | ✅ Supported |
+| Certificate Management | Manual or cert-manager | Manual or cert-manager | Manual or cert-manager |
+| TLS Options | ConfigMap annotations | `listener.tls.options` | ❌ Not supported |
 
 ## Best Practices
 

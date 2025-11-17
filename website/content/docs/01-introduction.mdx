@@ -43,7 +43,9 @@ Gateway API addresses these limitations by:
 2. **Standardized API**: Works across different implementations (Nginx, Istio, Contour, etc.)
 3. **More Expressive**: Native support for advanced routing, traffic splitting, and policies
 4. **Extensible**: Policy attachments and extension points for custom features
-5. **Multi-Protocol**: Supports HTTP, TCP, UDP, and TLS routing
+5. **Multi-Protocol**: Gateway API specification supports HTTP, TCP, UDP, and TLS routing (implementation support varies - see provider docs)
+
+> **Note**: This site focuses on **NGINX Gateway Fabric (NGF)**, which supports HTTP and HTTPS protocols only. Other Gateway API implementations may support additional protocols like TCP, UDP, or TLS passthrough.
 
 ## Architecture Comparison
 
