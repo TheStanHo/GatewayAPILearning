@@ -67,6 +67,33 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Video Section */}
+        <div className="max-w-4xl mx-auto mb-12 md:mb-16">
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 text-center">
+              The Future of Kubernetes Networking
+            </h2>
+            <div className="aspect-video w-full mb-4 rounded-lg overflow-hidden bg-gray-100">
+              <video
+                className="w-full h-full object-contain"
+                controls
+                preload="metadata"
+                poster=""
+              >
+                <source src="/videos/The_Future_of_K8s_Networking.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <div className="text-sm md:text-base text-gray-600 leading-relaxed space-y-2">
+              <p className="font-semibold text-gray-900 mb-2">Overview:</p>
+              <p>
+                {/* TODO: Add NotebookLM generated overview/caption here */}
+                This video explores the evolution of Kubernetes networking and the transition from Ingress Controllers to Gateway API. Learn about the key improvements, architectural changes, and benefits that Gateway API brings to Kubernetes service networking.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto mb-12 md:mb-16">
           <Link
             href="/docs"
